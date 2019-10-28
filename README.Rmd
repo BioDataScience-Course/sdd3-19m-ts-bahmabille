@@ -21,6 +21,25 @@ Le nouveau médicament a t'il un effet sur l'activité cérébrale du patient é
 
 > Jeu de données : schizo.txt
 
+```{r}
+library(readr)
+schizo <- read_csv("data/schizo.txt")
+#View(schizo)
+class(schizo)
+schizo_ts <- ts(schizo, start = 1.000, frequency = 1) #on met f=1 car pas précisé, une observation par jour.
+schizo_ts
+# Cette série n'a pas d'autocorrélation
+acf(schizo_ts) 
+```
+
+```{r}
+#pour extraire un vecteur du tableau dataframe: dfdollarcollonne_a_extraire : df=dataframe
+time(schizo)
+plot(schizo)
+cycle(schizo)
+```
+
+
 ### Les tremblements de terre dans le monde
 
 Les tremblements de terre d'une magnitude supérieur à 7 sont comptabilisé dans le monde entre 1900 et 1998.
@@ -131,7 +150,7 @@ knitr::include_graphics("images/australie.jpg")
 
 Nous attendons des rapports individuels liés à chaque situation présentée précédement sous le format d'un R Markdown ( format de sortie libre). Il ne s'agit pas de rapports scientifiques conventionnels dont vous connaissez bien la structure (introduction, matériels & méthodes, but, ....).
 
-Vousq devez considérer ces rapports comme des carnets de laboratoires. Lors d'une expérience, tout est consigné dans le carnet de laboratoire.
+Vous devez considérer ces rapports comme des carnets de laboratoires. Lors d'une expérience, tout est consigné dans le carnet de laboratoire.
 
 Votre rapport doit respecter la logique suivante :
 
