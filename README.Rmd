@@ -28,7 +28,6 @@ schizo <- read_csv("data/schizo.txt")
 class(schizo)
 schizo_ts <- ts(schizo, start = 1.000, frequency = 1) #on met f=1 car pas précisé, une observation par jour.
 schizo_ts
-# Cette série n'a pas d'autocorrélation
 acf(schizo_ts) 
 ```
 
@@ -132,6 +131,49 @@ La production mensuelle de lait par vache est monitoré à partir de janvier 192
 
 ```{r,fig.align='center', echo=FALSE, out.width= '65%'}
 knitr::include_graphics("images/vache.jpg")
+```
+
+```{r}
+
+# Exemple de série temporelle
+data(nottem)
+nottem
+
+
+# Type d'objet de nottem
+class(nottem) # Objet de type 'ts' (time series). indique le type de variable : ts ou mts pour icic. (sinon il y a dataframe, 
+unclass(nottem) #retire le type de l'objet
+
+time(nottem) #fonction generique reagit differement en fonction de la classe du jeu de données.
+?time
+
+
+plot(nottem) 
+cycle(nottem)
+split(nottem, cycle(nottem))
+boxplot(split(nottem, cycle(nottem)))
+boxplot_by_cycle <- function(ts)
+  boxplot(split(ts, cycle(ts)))
+
+boxplot_by_cycle(nottem)
+
+?stat.slide
+
+not.stat <- stat.slide(time(nottem), nottem, xmin = 1920, deltat = 6)
+not.stat
+
+plot(not.stat) 
+
+
+?acf
+acf(nottem) 
+x <- rnorm(240) 
+x
+
+?ts
+x.ts <- ts(x, start = 1920.000, frequency = 12)
+x.ts
+acf(x.ts) 
 ```
 
 > Jeu de données : milk_product_1962

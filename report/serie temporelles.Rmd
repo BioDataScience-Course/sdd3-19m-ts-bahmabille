@@ -1,0 +1,537 @@
+---
+title: "Série spatio-temporelle"
+author: "Guyliann Engels & Philippe Grosjean"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Contexte
+
+Différentes analyses vous sont demandé dont les contexte vous sont expliqué ci-dessous
+
+### La Schizophrénie
+
+Un test d'activité cérébrale est réalisé sur un patient quotidiennement durant 120 jours. Au jour 60, les médécins lui prescrivent le médicament. 
+
+Le nouveau médicament a t'il un effet sur l'activité cérébrale du patient étudié ? 
+
+> Jeu de données : schizo.txt
+
+
+
+```{r}
+library(readr)
+schizo <- readr::read_csv("../data/schizo.txt")
+#il ne faut pass lancer Sciview en meme temps que readr, sinon il y aura un conflit de package.
+#View(schizo)
+class(schizo) 
+
+schizo_ts <- ts(schizo$schizo, start = 1.000, frequency = 1) #on met f=1 car pas précisé, une observation par jour.
+schizo_ts
+#on precise que dans le jeu de données schizo on veut la variable schizo. meme si le jeu de données ne contient que cette variable, il faut la préciser sinon il va considerer l'objet comme un (multiple time serie) mts.
+acf(schizo_ts)
+time(schizo_ts) 
+
+plot(schizo_ts) 
+cycle(schizo_ts)
+split(schizo_ts, cycle(schizo_ts))
+boxplot(split(lynx_ts, cycle(schizo_ts)))
+boxplot_by_cycle <- function(ts)
+  boxplot(split(ts, cycle(ts)))
+
+boxplot_by_cycle(schizo_ts)
+
+not.stat <- stat.slide(time(schizo_ts), lynx_ts, xmin = 1, deltat = 3)
+not.stat
+
+plot(not.stat) 
+
+#Autocorrelation
+x <- rnorm(240) 
+x
+acf(x.ts)
+
+## Identification de tendance à long terme
+# Tendance globale
+library(pastecs)
+# Test classique de signification du coefficient de Spearman (moins adapté pour les ts!)
+trend.test(schizo) # Valeur p-value = 4.946e-16, le seuil alpha est de 5%, ici la p-value est nettement plus faible donc on ne rejette H0, la différence est donc significative. Pas interessant de faire un simple test de correlation ds serie spatiotemporelle, car d'ooffice il devrait y en avoir. Donc le bootstrap nettement plus important.
+# Même test, mais par bootstrap (mieux!) => R = 999, rééchantillonage 999x, sachant qu'il y a en une qui est la serie initiale.
+schizo_trend_test <- trend.test(schizo, R = 999)
+schizo_trend_test
+# Visualisation graphique
+plot(schizo_trend_test)
+# Valeur p associée au test bootstrappé
+schizo_trend_test$p.value # 0 -> pas de tendance significative au seuil alpha de 5%
+
+
+## Etude de la tendance locale
+# Utilisation des sommes cumulées avec local.trend()
+schizo.lt <- local.trend(schizo_ts)
+# le cycle annuel perturbe l'analyse pluriannuelle
+# -> aggrégation des données par an, on indique 1 car l'unite dse temps dans cette serie est de 1 an.
+schizo2 <- aggregate(schizo_ts, 1, mean)
+schizo2
+plot(schizo2)
+# Graphe après aggrégation : 
+# La courbe en rouge (somme cumulées) amplifie les variations
+# Choisir manuellement les points à identifier
+# ATTENTION: identify() ne peut PAS être utilisée dans un R Markdown ou Notebook
+# Cette fonction doit être utilisée seulement dans le fenêtre console de R!!!
+not.lt2 <- local.trend(schizo2)
+identify(not.lt2) # Cliquer les points voulus, puis indiquer "finish"...
+#la console nous donne: 
+#$pos[1]   7  63 119  trois points : un au début, un au milieu et un à la fin.
+#$trends
+#[1] 73.83929 39.69643 : les deux pentes
+#$k
+#[1] 56.325 : moyenne en tout
+
+## Analyse spectrale
+spectrum(schizo_ts) # Cycle annuel
+# Technique très puissante, mais signal brut bruité => lissage nécessaire!
+# Lissage du spectre pour mieux voir
+# L'argument 'spans' affectue ce lissage (voir cours)
+# Il n'y a pas de règle stictes. Il faut juste deux nombres impairs
+spectrum(schizo_ts, spans = c(3, 5))
+# Permet de mieux mettre en évidence les pics significatifs
+```
+
+
+
+### Les tremblements de terre dans le monde
+
+Les tremblements de terre d'une magnitude supérieur à 7 sont comptabilisé dans le monde entre 1900 et 1998.
+
+
+```{r,fig.align='center', echo=FALSE, out.width= '55%'}
+knitr::include_graphics("images/earthquake.jpg")
+```
+
+```{r}
+library(readr)
+schizo <- readr::read_csv("../data/schizo.txt")
+#il ne faut pass lancer Sciview en meme temps que readr, sinon il y aura un conflit de package.
+#View(schizo)
+class(schizo) 
+
+schizo_ts <- ts(schizo$schizo, start = 1.000, frequency = 1) #on met f=1 car pas précisé, une observation par jour.
+schizo_ts
+#on precise que dans le jeu de données schizo on veut la variable schizo. meme si le jeu de données ne contient que cette variable, il faut la préciser sinon il va considerer l'objet comme un (multiple time serie) mts.
+acf(schizo_ts)
+time(schizo_ts) 
+
+plot(schizo_ts) 
+cycle(schizo_ts)
+split(schizo_ts, cycle(schizo_ts))
+boxplot(split(lynx_ts, cycle(schizo_ts)))
+boxplot_by_cycle <- function(ts)
+  boxplot(split(ts, cycle(ts)))
+
+boxplot_by_cycle(schizo_ts)
+
+not.stat <- stat.slide(time(schizo_ts), lynx_ts, xmin = 1, deltat = 3)
+not.stat
+
+plot(not.stat) 
+
+#Autocorrelation
+x <- rnorm(240) 
+x
+acf(x.ts)
+
+## Identification de tendance à long terme
+# Tendance globale
+library(pastecs)
+# Test classique de signification du coefficient de Spearman (moins adapté pour les ts!)
+trend.test(schizo) # Valeur p-value = 4.946e-16, le seuil alpha est de 5%, ici la p-value est nettement plus faible donc on ne rejette H0, la différence est donc significative. Pas interessant de faire un simple test de correlation ds serie spatiotemporelle, car d'ooffice il devrait y en avoir. Donc le bootstrap nettement plus important.
+# Même test, mais par bootstrap (mieux!) => R = 999, rééchantillonage 999x, sachant qu'il y a en une qui est la serie initiale.
+schizo_trend_test <- trend.test(schizo, R = 999)
+schizo_trend_test
+# Visualisation graphique
+plot(schizo_trend_test)
+# Valeur p associée au test bootstrappé
+schizo_trend_test$p.value # 0 -> pas de tendance significative au seuil alpha de 5%
+
+
+## Etude de la tendance locale
+# Utilisation des sommes cumulées avec local.trend()
+schizo.lt <- local.trend(schizo_ts)
+# le cycle annuel perturbe l'analyse pluriannuelle
+# -> aggrégation des données par an, on indique 1 car l'unite dse temps dans cette serie est de 1 an.
+schizo2 <- aggregate(schizo_ts, 1, mean)
+schizo2
+plot(schizo2)
+# Graphe après aggrégation
+not.lt2 <- local.trend(schizo2)
+# La courbe en rouge (somme cumulées) amplifie les variations
+# Choisir manuellement les points à identifier
+# ATTENTION: identify() ne peut PAS être utilisée dans un R Markdown ou Notebook
+# Cette fonction doit être utilisée seulement dans le fenêtre console de R!!!
+identify(not.lt2) # Cliquer les points voulus, puis indiquer "finish"...
+
+## Analyse spectrale
+spectrum(schizo_ts) # Cycle annuel
+# Technique très puissante, mais signal brut bruité => lissage nécessaire!
+# Lissage du spectre pour mieux voir
+# L'argument 'spans' affectue ce lissage (voir cours)
+# Il n'y a pas de règle stictes. Il faut juste deux nombres impairs
+spectrum(schizo_ts, spans = c(3, 5))
+# Permet de mieux mettre en évidence les pics significatifs
+```
+
+ Y a t'il des périodes de fortes activités sismiques ? 
+
+> Jeu de données : earthq.txt
+
+
+### Les feux de forêts au Canada
+
+On dénombre le nombre d'acres de forêt qui est détruit par le feu.
+
+
+```{r,fig.align='center', echo=FALSE, out.width= '55%'}
+knitr::include_graphics("images/feux_forets.jpg")
+```
+
+Est ce que les feux de forêts sont-ils en augmentation ?
+
+> Jeu de données : fire.txt
+
+**Note** :  1  acre correspond à 4046 m^2^
+
+### La population de lynx
+
+Une étude s'intéresse aux  lynx capturés entre 1821 et 1934 au Canada.
+
+```{r,fig.align='center', echo=FALSE, out.width= '55%'}
+knitr::include_graphics("images/lynx.jpg")
+```
+
+```{r}
+ datasets::lynx
+ SciViews::R
+
+class(lynx) 
+
+lynx_ts <- ts(lynx, start = 1821, frequency = 1) #on met f=1 car pas précisé, une observation par jour.
+lynx_ts
+acf(lynx_ts)
+time(lynx_ts) 
+
+plot(lynx_ts) 
+cycle(lynx_ts)
+split(lynx_ts, cycle(lynx_ts))
+boxplot(split(lynx_ts, cycle(lynx_ts)))
+boxplot_by_cycle <- function(ts)
+  boxplot(split(ts, cycle(ts)))
+
+boxplot_by_cycle(lynx_ts)
+
+notm.stat <- stat.slide(time(lynx_ts), lynx_ts, xmin = 1821, deltat = 6)
+notm.stat
+
+plot(notm.stat) 
+
+#Autocorrelation
+acf(lynx_ts) 
+xm <- rnorm(240) 
+xm
+```
+
+
+> Jeu de données : lynx du package datasets
+
+### La production de bières
+
+La production mensuelle de bière (mégalitres) est encodée mensuellement depuis 1956. Décomposez cette série avec la méthode des moyennes mobiles
+
+```{r,fig.align='center', echo=FALSE, out.width= '65%'}
+knitr::include_graphics("images/beer.jpg")
+```
+
+> Jeu de données : beer.txt
+
+```{r}
+library(readr)
+beer <- read_csv("../data/beer.txt")
+#View(beer)
+
+class(beer) 
+
+beer_ts <- ts(beer, start = 1956, frequency = 12) #on met f=1 car pas précisé, une observation par jour.
+beer_ts
+acf(beer_ts)
+time(beer_ts) 
+
+plot(beer_ts) 
+cycle(beer_ts)
+split(beer_ts, cycle(beer_ts))
+boxplot(split(beer_ts, cycle(beer_ts)))
+boxplot_by_cycle <- function(ts)
+  boxplot(split(ts, cycle(ts)))
+
+boxplot_by_cycle(beer_ts)
+
+notm.stat <- stat.slide(time(beer_ts), beer_ts, xmin = 1973, deltat = 6)
+notm.stat
+
+plot(notm.stat) 
+
+#Autocorrelation
+acf(beer_ts) 
+xm <- rnorm(240) 
+xm
+```
+
+
+### Croissance d'arbres
+
+Les scientifiques mesurent l'épaisseur de cernes (en cm) sur des arbres abattus en 1973. Décomposez cette série avec la méthode des moyennes mobiles
+
+```{r,fig.align='center', echo=FALSE, out.width= '65%'}
+knitr::include_graphics("images/arbre.jpg")
+```
+
+> Jeu de données : cernes.txt
+
+```{r}
+
+library(readr)
+cernes <- read_csv("../data/cernes.txt")
+#View(cernes)
+
+class(cernes) 
+
+cernes_ts <- ts(cernes, start = 1973, frequency = 1) #on met f=1 car pas précisé, une observation par jour.
+cernes_ts
+acf(cernes_ts)
+time(cernes_ts) 
+
+plot(cernes_ts) 
+cycle(cernes_ts)
+split(cernes_ts, cycle(cernes_ts))
+boxplot(split(cernes_ts, cycle(cernes_ts)))
+boxplot_by_cycle <- function(ts)
+  boxplot(split(ts, cycle(ts)))
+
+boxplot_by_cycle(cernes_ts)
+
+notm.stat <- stat.slide(time(cernes_ts), cernes_ts, xmin = 1973, deltat = 6)
+notm.stat
+
+plot(notm.stat) 
+
+#Autocorrelation
+?acf
+acf(cernes_ts) 
+xm <- rnorm(240) 
+xm
+```
+
+### Variation de la température 
+
+Les chercheurs rencensent la température moyenne mensuelle à Melbourne à partir de janvier 1981. Y a t'il une augmentation de la température au cours du temps ? 
+
+```{r,fig.align='center', echo=FALSE, out.width= '65%'}
+knitr::include_graphics("images/temperature.jpg")
+```
+
+```{r}
+library(readr)
+temperature_melbourne_1981 <- read_csv("../data/temperature_melbourne_1981.csv")
+#View(temperature_melbourne_1981)
+
+class(temperature_melbourne_1981) 
+
+temperature_melbourne_1981_ts <- ts(temperature_melbourne_1981, start = 1.000, frequency = 1) #on met f=1 car pas précisé, une observation par jour.
+temperature_melbourne_1981_ts
+acf(temperature_melbourne_1981_ts)
+time(temperature_melbourne_1981_ts) 
+
+#plot(marbio_ts) 
+cycle(temperature_melbourne_1981_ts)
+split(temperature_melbourne_1981_ts, cycle(temperature_melbourne_1981_ts))
+boxplot(split(temperature_melbourne_1981_ts, cycle(temperature_melbourne_1981_ts)))
+boxplot_by_cycle <- function(ts)
+  boxplot(split(ts, cycle(ts)))
+
+boxplot_by_cycle(temperature_melbourne_1981_ts)
+
+notma.stat <- stat.slide(time(temperature_melbourne_1981_ts), temperature_melbourne_1981_ts, xmin = 1981, deltat = 3)
+notma.stat
+
+plot(notma.stat) 
+
+#Autocorrelation
+?acf
+acf(temperature_melbourne_1981_ts) 
+xm <- rnorm(240) 
+xm
+```
+
+
+> Jeu de données : temperature_melbourne_1981
+
+### Transect de Nice à Calvi
+
+Les chercheurs souhaitent visualiser graphiquement la distribution des Copépodes le long du transect (Variable Copepodits1).
+
+```{r, echo= FALSE, message=FALSE, out.width= '50%', fig.align='center'}
+library(tidyverse)
+library(cowplot)
+fr <- map_data("france")
+ggplot(fr, aes(long, lat, group = group)) +
+  geom_polygon(fill= "white", color = "black") +
+  geom_segment(aes(y = 43.7 , x = 7.25, yend = 42.56, xend= 8.75, color = "red"), size = 1, show.legend = FALSE) +
+  theme(axis.line = element_blank(), axis.title = element_blank(),axis.text = element_blank(), axis.ticks = element_blank()) +
+  coord_quickmap()
+```
+
+```{r}
+library(readr)
+data(marbio)
+marbio
+
+class(marbio) 
+
+marbio_ts <- ts(marbio$Copepodits1, start = 1.000, frequency = 1) #on met f=1 car pas précisé, une observation par jour.
+marbio_ts
+acf(marbio_ts)
+time(marbio_ts) 
+
+#plot(marbio_ts) 
+cycle(marbio_ts)
+split(marbio_ts, cycle(marbio_ts))
+boxplot(split(marbio_ts, cycle(marbio_ts)))
+boxplot_by_cycle <- function(ts)
+  boxplot(split(ts, cycle(ts)))
+
+boxplot_by_cycle(marbio_ts)
+
+notma.stat <- stat.slide(time(marbio_ts), marbio_ts, xmin = 1.000, deltat = 6)
+notma.stat
+
+plot(notma.stat) 
+
+#Autocorrelation
+?acf
+acf(marbio_ts) 
+xm <- rnorm(240) 
+xm
+```
+
+
+> Jeu de données : Marbio du package (Pastecs)
+
+### Production de lait 
+
+La production mensuelle de lait par vache est monitoré à partir de janvier 1926. Y a t'il une évolution linéaire? Le cycle annuel est modélisable ? 
+
+```{r,fig.align='center', echo=FALSE, out.width= '65%'}
+knitr::include_graphics("images/vache.jpg")
+```
+
+
+
+
+```{r}
+library(readr)
+milK_product_1962 <- read_csv("../data/milK_product_1962.csv")
+milK_product_1962
+
+
+class(milK_product_1962) 
+
+milK_product_1962_ts <- ts(milK_product_1962$product, start = 1962, frequency = 12) #on met f=1 car pas précisé, une observation par jour.
+milK_product_1962_ts
+acf(milK_product_1962_ts)
+time(milK_product_1962_ts) 
+
+plot(milK_product_1962_ts) 
+cycle(milK_product_1962_ts)
+split(milK_product_1962_ts, cycle(milK_product_1962_ts))
+boxplot(split(milK_product_1962_ts, cycle(milK_product_1962_ts)))
+boxplot_by_cycle <- function(ts)
+  boxplot(split(ts, cycle(ts)))
+
+boxplot_by_cycle(milK_product_1962_ts)
+
+?stat.slide
+
+notm.stat <- stat.slide(time(milK_product_1962_ts), milK_product_1962_ts, xmin = 1962, deltat = 6)
+notm.stat
+
+plot(notm.stat) 
+
+#Autocorrelation
+?acf
+acf(milK_product_1962_ts) 
+xm <- rnorm(240) 
+xm
+```
+
+> Jeu de données : milk_product_1962
+
+### Variation de la population en Australie
+
+Les chercheurs rencensent mensuellement le population Australienne à partir de 1978. Ils souhaitent savoir si la croissance a été linéaire. 
+
+```{r,fig.align='center', echo=FALSE, out.width= '65%'}
+knitr::include_graphics("images/australie.jpg")
+```
+
+```{r}
+library(readr)
+demographie <- read_csv("../data/demographie.txt")
+#View(demographie)
+
+class(demographie) 
+
+demographie_ts <- ts(demographie, start = 1978, frequency = 12) #on met f=1 car pas précisé, une observation par jour.
+demographie_ts
+acf(demographie_ts)
+time(demographie_ts) 
+
+plot(demographie_ts) 
+cycle(demographie_ts)
+split(demographie_ts, cycle(demographie_ts))
+boxplot(split(demographie_ts, cycle(demographie_ts)))
+boxplot_by_cycle <- function(ts)
+  boxplot(split(ts, cycle(ts)))
+
+boxplot_by_cycle(demographie_ts)
+
+notm.stat <- stat.slide(time(demographie_ts), demographie_ts, xmin = 1962, deltat = 6)
+notm.stat
+
+plot(notm.stat) 
+
+#Autocorrelation
+?acf
+acf(demographie_ts) 
+xm <- rnorm(240) 
+xm
+```
+
+> jeu de données : demographie.txt
+
+## Objectifs
+
+Nous attendons des rapports individuels liés à chaque situation présentée précédement sous le format d'un R Markdown ( format de sortie libre). Il ne s'agit pas de rapports scientifiques conventionnels dont vous connaissez bien la structure (introduction, matériels & méthodes, but, ....).
+
+Vous devez considérer ces rapports comme des carnets de laboratoires. Lors d'une expérience, tout est consigné dans le carnet de laboratoire.
+
+Votre rapport doit respecter la logique suivante :
+
+- But : Quelle est la question que vous vous posez ? Cette information se trouve dans la section ci-dessus.
+
+
+- Analyse : Cette section doit montrer l'évolution de votre analyse des données. Chaque graphiqe ou chaque modèle doit être commenté dans le texte en dessous de ce dernier.
+
+
+**Note :** Les données sont mises à votre disposition au sein du dépôt dans le dossier data
