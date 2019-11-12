@@ -4,14 +4,32 @@ author: "Guyliann Engels & Philippe Grosjean"
 output: github_document
 ---
 
+
+## Objectifs
+
+Nous attendons des rapports individuels liés à chaque situation présentée précédement sous le format d'un R Markdown ( format de sortie libre). Il ne s'agit pas de rapports scientifiques conventionnels dont vous connaissez bien la structure (introduction, matériels & méthodes, but, ....).
+
+Vous devez considérer ces rapports comme des carnets de laboratoires. Lors d'une expérience, tout est consigné dans le carnet de laboratoire.
+
+Votre rapport doit respecter la logique suivante :
+
+- But : Quelle est la question que vous vous posez ? Cette information se trouve dans la section ci-dessus.
+
+
+- Analyse : Cette section doit montrer l'évolution de votre analyse des données. Chaque graphiqe ou chaque modèle doit être commenté dans le texte en dessous de ce dernier.
+
+
+**Note :** Les données sont mises à votre disposition au sein du dépôt dans le dossier data
+
+## Contexte
+
+11 analyses vous sont demandées dont les contextes vous sont expliqués ci-dessous.
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
-## Contexte
-
-Différentes analyses vous sont demandé dont les contexte vous sont expliqué ci-dessous
 
 ### La Schizophrénie
 
@@ -50,21 +68,24 @@ not.stat
 
 plot(not.stat) 
 
-#Autocorrelation
+#(((Autocorrelation
 x <- rnorm(240) 
 x
 acf(x.ts)
+#nous pouvons observer qu'il n'y a pas d'autocorrelation)))
 
 ## Identification de tendance à long terme
 # Tendance globale
 library(pastecs)
+
 # Test classique de signification du coefficient de Spearman (moins adapté pour les ts!)
-trend.test(schizo) # Valeur p-value = 4.946e-16, le seuil alpha est de 5%, ici la p-value est nettement plus faible donc on ne rejette H0, la différence est donc significative. Pas interessant de faire un simple test de correlation ds serie spatiotemporelle, car d'ooffice il devrait y en avoir. Donc le bootstrap nettement plus important.
+trend.test(schizo) # Valeur p-value = 4.946e-16, le seuil alpha est de 5%, ici la p-value est nettement plus faible donc on ne rejette H0, la différence est donc significative. Pas interessant de faire un simple test de correlation ds serie spatio-temporelle, car d'office il devrait y en avoir. Donc le bootstrap nettement plus important.
 # Même test, mais par bootstrap (mieux!) => R = 999, rééchantillonage 999x, sachant qu'il y a en une qui est la serie initiale.
 schizo_trend_test <- trend.test(schizo, R = 999)
 schizo_trend_test
 # Visualisation graphique
 plot(schizo_trend_test)
+#INTERPRETATION???
 # Valeur p associée au test bootstrappé
 schizo_trend_test$p.value # 0 -> pas de tendance significative au seuil alpha de 5%
 
@@ -73,7 +94,7 @@ schizo_trend_test$p.value # 0 -> pas de tendance significative au seuil alpha de
 # Utilisation des sommes cumulées avec local.trend()
 schizo.lt <- local.trend(schizo_ts)
 # le cycle annuel perturbe l'analyse pluriannuelle
-# -> aggrégation des données par an, on indique 1 car l'unite dse temps dans cette serie est de 1 an.
+# -> aggrégation des données par an, on indique 1 car l'unite de temps dans cette serie est de 1 an.
 schizo2 <- aggregate(schizo_ts, 1, mean)
 schizo2
 plot(schizo2)
@@ -84,7 +105,7 @@ plot(schizo2)
 # Cette fonction doit être utilisée seulement dans le fenêtre console de R!!!
 not.lt2 <- local.trend(schizo2)
 identify(not.lt2) # Cliquer les points voulus, puis indiquer "finish"...
-#la console nous donne: 
+#LA CONSOLE nous donne: 
 #$pos[1]   7  63 119  trois points : un au début, un au milieu et un à la fin.
 #$trends
 #[1] 73.83929 39.69643 : les deux pentes
@@ -519,19 +540,3 @@ xm
 ```
 
 > jeu de données : demographie.txt
-
-## Objectifs
-
-Nous attendons des rapports individuels liés à chaque situation présentée précédement sous le format d'un R Markdown ( format de sortie libre). Il ne s'agit pas de rapports scientifiques conventionnels dont vous connaissez bien la structure (introduction, matériels & méthodes, but, ....).
-
-Vous devez considérer ces rapports comme des carnets de laboratoires. Lors d'une expérience, tout est consigné dans le carnet de laboratoire.
-
-Votre rapport doit respecter la logique suivante :
-
-- But : Quelle est la question que vous vous posez ? Cette information se trouve dans la section ci-dessus.
-
-
-- Analyse : Cette section doit montrer l'évolution de votre analyse des données. Chaque graphiqe ou chaque modèle doit être commenté dans le texte en dessous de ce dernier.
-
-
-**Note :** Les données sont mises à votre disposition au sein du dépôt dans le dossier data
