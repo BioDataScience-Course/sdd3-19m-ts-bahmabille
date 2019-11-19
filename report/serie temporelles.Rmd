@@ -28,6 +28,7 @@ Votre rapport doit respecter la logique suivante :
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+#??????????
 ```
 
 
@@ -46,34 +47,75 @@ library(readr)
 schizo <- readr::read_csv("../data/schizo.txt")
 #il ne faut pass lancer Sciview en meme temps que readr, sinon il y aura un conflit de package.
 #View(schizo)
-class(schizo) 
 
-schizo_ts <- ts(schizo$schizo, start = 1.000, frequency = 1) #on met f=1 car pas précisé, une observation par jour.
+class(schizo) #ici nous voyons que schizo contient des objets du type "spec_tbl_df", "tbl_df","tbl" et "data.frame". Nous allons donc le transformer en objet ts plus bas.
+
+unclass(schizo) #nous voyons qu'il s'agit d'un vecteur de nombres de 1 à 120, avec comme attribut attr(,"row.names"), attr(,"spec"), cols(schizo = col_double()).
+
+schizo_ts <- ts(schizo$schizo, start = 1.000, frequency = 1) 
+#on met f=1 car pas précisé, une observation par jour. on precise que dans le jeu de données schizo on veut la variable schizo. meme si le jeu de données ne contient que cette variable, il faut la préciser sinon il va considerer l'objet comme un (multiple time serie) mts."
+#The function ts is used to create time-series objects". Arguments "data : a vector or matrix of the observed time-series values. A data frame will be coerced to a numeric matrix via data.matrix. start	: the time of the first observation. end : the time of the last observation, specified in the same way as start. frequency	: the number of observations per unit of time. deltat : the fraction of the sampling period between successive observations; e.g., 1/12 for monthly data. Only one of frequency or deltat should be provided. ts.eps	: time series comparison tolerance. Frequencies are considered equal if their absolute difference is less than ts.eps. class	: class to be given to the result, or none if NULL or "none". The default is "ts" for a single series, c("mts", "ts", "matrix") for multiple series. names	: a character vector of names for the series in a multiple series: defaults to the colnames of data, or Series 1, Series 2, ...."
+
 schizo_ts
-#on precise que dans le jeu de données schizo on veut la variable schizo. meme si le jeu de données ne contient que cette variable, il faut la préciser sinon il va considerer l'objet comme un (multiple time serie) mts.
-acf(schizo_ts)
+
+
 time(schizo_ts) 
+#Dans la console on peut observer le vecteur de temps qui nous indique les moments où les échantillonnages ont étés effectués. Nous voyons un vecteur qui va du moment 1 au moment 120, avec comme Time Series: Start = 1, End = 120, Frequency = 1.
+#"time creates the vector of times at which a time series was sampled. 
 
 plot(schizo_ts) 
+# Ce graphique nous montre les valeurs des differents echantillonnages allant du temps 1 au 120. Remarquons que les observations sont reliées les unes autres en une ligne continue pour indiquer le dépendance des observations entre elles (contrairement au nuage de points).
+
 cycle(schizo_ts)
+#Si les observations etaient faite sur plusieurs années, la fonction cycle agirait en numerotant tous les mois de janvier 1, février = 2, etc. Dans le cas du jeu de données schizo, les observation ne sont ni annuelles, ni mensuelles... dans la console toutes les observations sont numerotées 1. L'utilisation de la fonction cycle n'est pas justifie ici.
+#cycle gives the positions in the cycle of each observation. frequency returns the number of samples per unit time. deltat gives the time interval between observations.
+
+
 split(schizo_ts, cycle(schizo_ts))
-boxplot(split(lynx_ts, cycle(schizo_ts)))
+# Split separe la série en fonction des cycles. $'1' = toutes les mesure du mois de janvier, $'2' = février, etc. Ici toutes les observations sont reprises dans $`1` puisqu'il n'y a pas plusieurs cycles. L'utilisation de la fonction split n'est pas justifie ici.
+#"split divides the data in the vector x into the groups defined by f. The replacement forms replace values corresponding to such a division. unsplit reverses the effect of split. USAGE split(x, f...). ARGUMENTS x : vector or data frame containing values to be divided into groups. f	: a ‘factor’ in the sense that as.factor(f) defines the grouping, or a list of such factors in which case their interaction is used for the grouping."
+
+boxplot(split(schizo_ts, cycle(schizo_ts)))
+# Boites de dispersion (avec les cinqs nombres: premier quartile=q1, mediane=deuxième quartile, troisième quartile = q3, valeur minimal et valeur maximale comprises dans 1,5*IQR (interquartile range= q3-q1)) pour les données mensuelles : une boite avec toutes les valeurs de janvier, une avec toutes les valeurs de février, etc. Ceci a été possible grace aux fonctions cycles et split.
+
+#Création d'une fonction personnalisée pour plus de confort puis 3° ligne de code = pour générer les boxplots.
 boxplot_by_cycle <- function(ts)
   boxplot(split(ts, cycle(ts)))
 
 boxplot_by_cycle(schizo_ts)
 
-not.stat <- stat.slide(time(schizo_ts), lynx_ts, xmin = 1, deltat = 3)
-not.stat
+##Statistiques glissantes
+library(pastecs) 
+# besoin de ce package
 
-plot(not.stat) 
+?stat.slide
+#"Statistical parameters are not constant along a time series: mean or variance can vary each year, or during particular intervals (radical or smooth changes due to a pollution, a very cold winter, a shift in the system behaviour, etc. Sliding statistics offer the potential to describe series on successive blocs defined along the space-time axis."
+#ARGUMENTS x: a vector with time data for stat.slide(), or a 'stat.slide' object for the methods. y : a vector with observation at corresponding times. xcut : a vector with the position in time of the breaks between successive blocs. xcut=NULL by default. In the later case, a vector with equally spaced blocs is constructed using xmin, n and frequency or deltat. If a value is provided for xcut, then it supersedes all these other parameters. xmin	: the minimal value in the time-scale to use for constructing a vector of equally spaced breaks. n	: the number of breaks to use. frequency	: the frequency of the breaks in the time-scale. deltat	: the bloc interval to use for constructing an equally-spaced break vector. deltat is 1/frequency. basic	: do we have to return basic statistics (by default, it is FALSE)? These are: the number of values (nbr.val), the number of null values (nbr.null), the number of missing values (nbr.na), the minimal value (min), the maximal value (max), the range (range, that is, max-min) and the sum of all non-missing values (sum). desc	: do we have to return descriptive statistics (by default, it is FALSE)? These are: the median (median), the mean (mean), the standard error on the mean (SE.mean), the confidence interval of the mean (CI.mean) at the p level, the variance (var), the standard deviation (std.dev) and the variation coefficient (coef.var) defined as the standard deviation divided by the mean.
 
-#(((Autocorrelation
-x <- rnorm(240) 
+not_stat <- stat.slide(time(schizo_ts), schizo_ts, xmin = 1, deltat = 3)
+# Vecteur temps par intervalles de 3 jours.
+
+not_stat
+# Calcul de quelques descripteurs statistiques : de 1 à 10 lignes = statistiques | de 1 à 40 colonnes = intervalles de temps pour lesquels chacune des statistiques a été calculée.
+
+plot(not_stat) 
+# Représentation graphique de ces valeurs
+#De part la ligne rouge, nous ne voyons ni d'augmentation ni de diminution constante, les résultats semblent plutots aléatoires.
+#
+
+##Autocorrelation 
+#comparaison avec une série purement aléatoire
+x <- rnorm(120) #création d'une vecteur de nombres aléatoires
 x
-acf(x.ts)
-#nous pouvons observer qu'il n'y a pas d'autocorrelation)))
+x_ts <- ts(x, start = 1, end = 120, frequency = 1) #transformation en objet ts.
+acf(x_ts) #"The function acf computes (and by default plots) estimates of the autocovariance or autocorrelation function. lag.max	: maximum lag at which to calculate the acf. Default is 10*log10(N/m) where N is the number of observations and m the number of series. Will be automatically limited to one less than the number of observations in the series." 
+#L'autocorrelation est directe si l'ACF vaut 1, elle est nulle si l'ACF vaut 0, l'autocorrelation est inverse si l'ACF vaut -1. Les ligne discontinues en bleu indiquent l'interval où la valeur de l'ACF est non significative. Nous pouvons observer qu'il n'y a pas d'autocorrelation exception faite de la première valeur qui a toujours une valeur de correlation de 1. 
 
+acf(schizo_ts) #Pour schizo l'autocorrelation est positive est significative.
+
+```
+
+```{r}
 ## Identification de tendance à long terme
 # Tendance globale
 library(pastecs)
@@ -120,8 +162,9 @@ spectrum(schizo_ts) # Cycle annuel
 # Il n'y a pas de règle stictes. Il faut juste deux nombres impairs
 spectrum(schizo_ts, spans = c(3, 5))
 # Permet de mieux mettre en évidence les pics significatifs
-```
 
+# 
+```
 
 
 ### Les tremblements de terre dans le monde
