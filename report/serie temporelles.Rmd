@@ -121,15 +121,21 @@ acf(schizo_ts) #Pour schizo l'autocorrelation est positive est significative.
 library(pastecs)
 
 # Test classique de signification du coefficient de Spearman (moins adapté pour les ts!)
-trend.test(schizo) # Valeur p-value = 4.946e-16, le seuil alpha est de 5%, ici la p-value est nettement plus faible donc on ne rejette H0, la différence est donc significative. Pas interessant de faire un simple test de correlation ds serie spatio-temporelle, car d'office il devrait y en avoir. Donc le bootstrap nettement plus important.
-# Même test, mais par bootstrap (mieux!) => R = 999, rééchantillonage 999x, sachant qu'il y a en une qui est la serie initiale.
+trend.test(schizo) 
+# Valeur p-value = 4.946e-16, le seuil alpha est de 5%, ici la p-value est nettement plus faible donc on ne rejette H0, la différence est donc significative. 
+# "Il doit exister une correlation significative entre les observations et le temps en présence d’une tendance. Mais comme les données ne sont pas indépendantes entre elles, on ne peut pas se référer à une distribution théorique. La distribution de référence est simulée en randomisant un grand nombre de fois les observations dans le temps (= technique du bootstrap)". Pas interessant de faire un simple test de correlation des serie spatio-temporelle, car d'office il devrait y en avoir. Donc le bootstrap est nettement plus important.
+ 
 schizo_trend_test <- trend.test(schizo, R = 999)
+# Même test, mais par bootstrap (mieux!) => R = 999, rééchantillonage 999x, sachant qu'il y a en une qui est la serie initiale; pour un totale de 1000.
+
 schizo_trend_test
+
 # Visualisation graphique
 plot(schizo_trend_test)
 #INTERPRETATION???
-# Valeur p associée au test bootstrappé
-schizo_trend_test$p.value # 0 -> pas de tendance significative au seuil alpha de 5%
+
+schizo_trend_test$p.value 
+# Valeur p associée au test bootstrappé# 0 -> Il y a bel et bien une tendance significative au seuil alpha de 5%.
 
 
 ## Etude de la tendance locale
