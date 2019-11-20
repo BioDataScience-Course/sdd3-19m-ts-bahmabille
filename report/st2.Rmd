@@ -209,6 +209,6 @@ spectrum(nottem, spans = c(3, 7))
 # L'argument 'spans' affectue ce lissage. Il n'y a pas de règles stictes, il faut juste deux nombres impairs.
 # barre bleu signal commence à etre significtif.
 # Permet de mieux mettre en évidence les pics significatifs.
-# (3, 7) deux valeurs impairs deux passage de lissage, plus les valuers sont eleves plus le signal est lissé.
+# (3, 7) deux valeurs impairs deux passage de lissage, plus les valeurs sont eleves plus le signal est lissé.
 ```
 
