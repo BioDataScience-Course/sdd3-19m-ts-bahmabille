@@ -1,0 +1,105 @@
+```{r}
+# Séries spatio-temporelles (seconde partie)
+
+# Repartons de notre exemple de série temporelle: température à Nottingham (NottinghamTemperature --= nottem)
+data(nottem)
+nottem
+?nottem
+plot(nottem)
+#sur le graphe on voit que la série est dominée par un cycle annuel. on a l impression qu'il y a des variations à l'intérieur du cycle.
+
+# Des données différentes: CO2 dans l'air à Hawaï
+data(co2)
+co2
+?co2
+plot(co2)
+#cyclique mais tedance à long terme à l'augmentation = effet de type additif.
+
+
+## Identification de tendance à long terme
+# Tendance générale / globale
+library(pastecs)
+
+
+# Test classique de signification du coefficient de Spearman (moins adapté pour les ts!)
+trend.test(nottem)
+#p = 0.41 valeur très éloignée du seuil (alpha=0.05) on ne rejette pas Ho (covariance vaut 0) alors variation de la variable en y par rapport à celle de la variable en x (le temps) n'est ni directe ni inverse ==> pas de tendance.
+#test de correlation de spearman : comme il n'y a pas d'independance des observations la valeur de p est à prendre avec des pincettes. attention aux valeurs identiques : le test ne calcule pas une valeur p excate. Test valable uniquement si pas d'autocarrelation!!! 
+
+trend.test(co2) 
+#p= a peu pres 0, p<alpha ==> on rejette Ho => tendance significative.
+
+
+# Même test, mais par bootstrap (mieux!) => R = 999, rééchantillonage 999x pour un total de 1000 fois car la première est la série initiale
+nottem_trend_test <- trend.test(nottem, R = 999) # version boostrapée par ajout de l'argument R.
+#"Description : Test if the series has an increasing or decreasing trend, using a non-parametric Spearman test between the observations and time. Usage = trend.test(tseries, R=1). Arguments = tseries	: a univariate or multivariate time series (a 'rts' object in Splus or a 'ts' object in R). R	: The number of time the series is/are resampled for a bootstrap test. If R1 (by default), an usual Spearman test is performed. If R > 1 then a bootstrap test is run".
+
+nottem_trend_test 
+#impression contenu de l'objet 
+## original = coeff corrélation, bias = asymétrie, erreur standard= ecart-type par rapport à la distribution normale => le plus important c'est le graphique.
+
+plot(nottem_trend_test)
+#histogramme: distibution de p star bootstrapée, pointille = valeur du coeff de corrélation observé dans la série non réechantillone. plus le pointillé est extreme à gauche ou à droite dans la série plus on a tendance à penser que Ho est moins plausible=> tendance à rejetter Ho (==>pas de tendance globale). p calculé grâce a l'air sous la courbe (qui relierait les sommets de tous les barres verticales de l'histogramme) aux extremités du pointillé.
+#quantile-quantile pour voir si la distibution boostrapée se rapproche d'une distribution normal ou pas. Reponse=OUI si les observations (ronds noirs) suivent la droite en pointillé.
+
+nottem_trend_test$p.value 
+# Valeur p associée au test bootstrappé : 0.20 -> pas de tendance significative au seuil alpha de 5%.
+
+(co2_trend_test <- trend.test(co2, R = 999))
+#original=coeff de correlation de 0.988!!-->tendance significative.
+
+plot(co2_trend_test)
+#histogramme :  p calculé grâce a l'air sous la courbe (qui relierait les sommets de tous les barres verticales de l'histogramme) aux extremités du pointillé. aire sous la courbe à l'extremité droite de l'histogramme est trèès faible, p<alpha==>on rejette Ho==> il y a une tendance significative. Ligne verticale pointillée éloingnée des barres verticales de l'histogramme. pointille = valeur du coeff de corrélation observé dans la série non réechantillone. plus le pointillé est extreme à gauche ou à droite dans la série plus on a tendance à penser que Ho est moins plausible=> tendance à rejetter Ho (==>pas de tendance globale).
+#qqplot : les observations suivent une distribution normale exception faite des premières et des dernières.
+
+co2_trend_test$p.value
+#si on fait reference  à la distribution du coeff de corrélation (ligne verticale pointillé dans l'histogramme), elle est tres extreme à droite => valeur faible de p => p vaut zero ===> tendance très significative.
+
+
+
+## Etude de la tendance locale
+# Utilisation des sommes cumulées avec local.trend()
+not.lt <- local.trend(nottem)
+# le cycle annuel perturbe l'analyse pluriannuelle
+# -> aggrégation des données par an
+nottem2 <- aggregate(nottem, 1, mean)
+nottem2
+plot(nottem2)
+# Graphe après aggrégation
+not.lt2 <- local.trend(nottem2)
+# La courbe en rouge (somme cumulées) amplifie les variations
+# Choisir manuellement les points à identifier
+# ATTENTION: identify() ne peut PAS être utilisée dans un R Markdown ou Notebook
+# Cette fonction doit être utilisée seulement dans le fenêtre console de R!!!
+identify(not.lt2) # Cliquer les points voulus, puis indiquer "finish"...
+
+# Création d'une série artificielle
+x2.random <- rnorm(100) # composante aléatoire = bruit
+plot(x2.random, type = "l") # graphe de ces données
+# Choix des moyennes
+x2.means <- c(rep(5, 50), rep(6, 50))
+plot(x2.means, type = "l")
+# Signal observé = somme des 2 signaux
+x2 <- (x2.means + x2.random)
+plot(x2, type = "l")
+# Transformation en objet 'ts'
+x2.ts <- as.ts(x2)
+plot(x2.ts)
+# Recherche de tendances à l'aide des sommes cumulées
+x2.lt <- local.trend(x2)
+# Identifier les zones à la souris (RAPPEL: pas dans R Markdown!)
+identify(x2.lt)
+
+
+## Analyse spectrale
+spectrum(nottem) # Cycle annuel
+# Technique très puissante, mais signal brut bruité => lissage nécessaire!
+# Lissage du spectre pour mieux voir
+?spectrum
+# L'argument 'spans' affectue ce lissage (voir cours)
+# Il n'y a pas de règle stictes. Il faut juste deux nombres impairs
+spectrum(nottem, spans = c(3, 7))
+# Permet de mieux mettre en évidence les pics significatifs
+
+```
+
