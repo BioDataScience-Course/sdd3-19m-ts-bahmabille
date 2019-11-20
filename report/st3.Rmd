@@ -11,8 +11,10 @@ data(co2)
 co2
 ?co2
 plot(co2)
+#on voit amplitude qui reste constante tout au long.
 
 library(pastecs)
+#il ne faut pas charger sciviews::R
 
 # Décomposition de séries régulières
 # fonction tsd()
@@ -20,6 +22,9 @@ library(pastecs)
 
 # Lissage par moyennes mobiles
 ?decaverage
+#objet=ts ou rts si on utilise pas R mais S+, type, order et parfois times. pour le reste laisser les valeurs par defaut.
+#
+
 
 time(co2)	# données mensuelle
 ## Fenêtre de 12 mois -> élimine la tendance saisonnière
@@ -27,53 +32,69 @@ co2.avg <- tsd(co2, method = "average", type = "additive",
   order = 6, times = 3)
 # Si 'times' augmente alors le lissage est plus fort
 co2.avg
-plot(co2.avg, col = 1:3)
-# On voit bien que le choix judicieux de la fenêtre a permis d'éliminer
-# complètement l'effet saisonnier
+#on voit que tsd donne a decaverage le travail a faire.
 
+plot(co2.avg, col = 1:3)
+# On voit bien que le choix judicieux de la fenêtre a permis d'éliminer complètement l'effet saisonnier
+#premier graphique=serie de depart, (après filtrage=) signal à longterme, residus. Si on fait times=1 on voit que c'est pas mal mais il manque un peu. si times=10, faut considerer que les techniques utilisees ne sont pas parfaites, on voit que le signal est nettement plus lissé
 # Même chose sur nottem
 not.avg <-  tsd(nottem, method = "average", type = "additive",
   order = 6, times = 10)
+#pour determiner la vleur de times il faut verifier s'il reste encore un cycle annuel dans le signal ou pas.
+
 plot(not.avg, col = 1:3)
-# Autre façon de représenter les résultats, en superposant les courbes
+#attention les trois graphiques n'ont pas la meme echelle obligatoirement.
+
+# Autre façon de représenter les résultats, en superposant les courbes pour eviter erreurs d'exchelles entres les trois graphiques. stack=superposer.
 plot(not.avg, col = 1:2, stack = FALSE, resid = FALSE)
 
 # Transformation en séries temporelles multiples
 not.avg.ts <- tseries(not.avg)
+# tseries extrait toutes les composantes de la série, ici "Components [1] "filtered"  "residuals"".
+
 is.ts(not.avg) # Non
 is.ts(not.avg.ts) # Oui
 is.mts(not.avg.ts) # Aussi
+#is. est utilisé pour interroger. on peut aussi utiliset class().
+
 plot(not.avg.ts)
+#nous voyons ici un premier graphique qui represente le serie lissee (sans les fluctuations ponctuelles) et celui des residus extraits.
 
 # Extraction d'une ou plusieurs composantes
 not.avg.filtered <- extract(not.avg, components = "filtered")
-is.ts(not.avg.filtered) # Oui
-is.mts(not.avg.filtered) # Non
+#extract permet d'extraire une seule composante à la fois. Extract permet d'extraire une série temporelle meme à partir d'un objet tsd (non ts).
+
+is.ts(not.avg.filtered) # Oui: la Console nous indique TRUE, cela signifie qu'il s'agit d'une série temporelle.
+is.mts(not.avg.filtered) # Non: la Console nous indique FALSE, cela signifie qu'il ne s'agit pas d'une série temporelle multiple.
+
 plot(not.avg.filtered)
+#nous voyons ici la série lissé (sans fluctuations ponctuelles...résidus).
+
 # Analyse
-acf(not.avg.filtered)
-spectrum(not.avg.filtered, span = c(3, 5))
-(not.avg.trend <- trend.test(not.avg.filtered, R = 999))
+acf(not.avg.filtered) # Effet saisonnier très marqué. Lag est le décalage qui a permit de calculer s'il y a autocorrelation ou pas. Pour le premier point decalage nul=serie comparé à elle meme donc acf=1.
+spectrum(not.avg.filtered, span = c(3, 5)) 
+#pour verifier qd on extrait la tendance qu'on la bien extraite. si on extrait les residus c'est pour voir s'il ne reste plus de tendance.
+(not.avg.trend <- trend.test(not.avg.filtered, R = 999)) #par bootstraps, entreparanthese pour directement imprime le resultat
 plot(not.avg.trend)
-not.avg.trend$p.value # Tendance significative (compare with same test before filtration!)
+not.avg.trend$p.value # Tendance significative (compare with same test before filtration!). avec la decomposition, elimination des cycles, on voit apparaitre une tendance a longterme.
+
+
 
 not.avg.resid <- extract(not.avg, components = "residuals")
 is.ts(not.avg.resid) # Oui
 is.mts(not.avg.resid) # Non
 plot(not.avg.resid)
 # Analyse
-acf(not.avg.resid) # Effet saisonnier très marqué
+acf(not.avg.resid) 
 spectrum(not.avg.resid, span = c(3, 5)) # Idem
 (not.avg.resid.trend <- trend.test(not.avg.resid, R = 999))
 plot(not.avg.resid.trend)
 not.avg.resid.trend$p.value # Absoluement pas de tendance générale
 
-# Conclusion: la tendance générale et le cycle saisonnier ont été remarquablement
-# bien séparés l'un de l'autre par le filtrage par les moyennes mobiles
+# Conclusion: la tendance générale et le cycle saisonnier ont été remarquablement bien séparés l'un de l'autre par le filtrage par les moyennes mobiles
 
-# Les deux composantes étaient déjà visibles dès le départ pour co2,
-# mais à titre d'exercice, faite la même chose sur cette série...
-#
+# Les deux composantes étaient déjà visibles dès le départ pour co2, mais à titre d'exercice, faite la même chose sur cette série...
+
 
 ```
 

@@ -173,6 +173,22 @@ spectrum(schizo_ts, spans = c(3, 5))
 ```
 
 
+
+```{r}
+library(pastecs)
+schizo.avg <- tsd(schizo_ts, method = "average", type = "additive",
+  order = 3, times = 3)
+#choix d'order: etant donne la taille reduite du jeu de donnée et l'interpretation biologique du signal: activité cerebrale par jour. order de 6= fenetre de 13 observations. order=3 fenetre de 6 observations. ainsi on lisse les fluctuations(residus) et on mt en avant les tendances.
+schizo.avg
+plot(schizo.avg, col = 1:3)
+#premier graphique=serie initiale. deuxieme graphique= signal lissé, troisieme=residus.
+
+# Autre façon de représenter les résultats, en superposant les courbes pour eviter erreurs d'exchelles entres les trois graphiques. stack=superposer.
+plot(schizo.avg, col = 1:2, stack = FALSE, resid = FALSE)
+
+```
+
+
 ### Les tremblements de terre dans le monde
 
 Les tremblements de terre d'une magnitude supérieur à 7 sont comptabilisé dans le monde entre 1900 et 1998. Y a t'il des périodes de fortes activités sismiques ? 
