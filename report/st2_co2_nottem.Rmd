@@ -5,6 +5,7 @@
 data(nottem)
 nottem
 ?nottem
+#"A time series object containing average air temperatures at Nottingham Castle in degrees Fahrenheit for 20 years".
 plot(nottem)
 #sur le graphe on voit que la série est dominée par un cycle annuel. on a l impression qu'il y a des variations à l'intérieur du cycle.
 
@@ -47,59 +48,167 @@ nottem_trend_test$p.value
 
 (co2_trend_test <- trend.test(co2, R = 999))
 #original=coeff de correlation de 0.988!!-->tendance significative.
+#quand on met une ligne de code entre paranthèse ça veut dire qu'on imprime cette ligne de code; autrement dit, mettre les paranthèses nous évite de devoir reécrire la fonction pour qu'elle soit executée plus bas.
 
 plot(co2_trend_test)
-#histogramme :  p calculé grâce a l'air sous la courbe (qui relierait les sommets de tous les barres verticales de l'histogramme) aux extremités du pointillé. aire sous la courbe à l'extremité droite de l'histogramme est trèès faible, p<alpha==>on rejette Ho==> il y a une tendance significative. Ligne verticale pointillée éloingnée des barres verticales de l'histogramme. pointille = valeur du coeff de corrélation observé dans la série non réechantillone. plus le pointillé est extreme à gauche ou à droite dans la série plus on a tendance à penser que Ho est moins plausible=> tendance à rejetter Ho (==>pas de tendance globale).
+#histogramme :  p calculé grâce a l'air sous la courbe (qui relierait les sommets de tous les barres verticales de l'histogramme) aux extremités du pointillé. aire sous la courbe à l'extremité droite de l'histogramme est trèès faible, p<alpha==>on rejette Ho==> il y a une tendance significative. Ligne verticale pointillée éloingnée des barres verticales de l'histogramme. pointillé = valeur du coeff de corrélation observé dans la série non réechantillone. plus le pointillé est extreme à gauche ou à droite dans la série plus on a tendance à penser que Ho est moins plausible=> tendance à rejetter Ho (==>pas de tendance globale).
 #qqplot : les observations suivent une distribution normale exception faite des premières et des dernières.
 
 co2_trend_test$p.value
-#si on fait reference  à la distribution du coeff de corrélation (ligne verticale pointillé dans l'histogramme), elle est tres extreme à droite => valeur faible de p => p vaut zero ===> tendance très significative.
+#si on fait reference  à la distribution du coeff de corrélation (ligne verticale pointillé dans l'histogramme), elle:::: est tres extreme à droite => valeur faible de p => p vaut zero ===> tendance très significative.
 
 
 
 ## Etude de la tendance locale
 # Utilisation des sommes cumulées avec local.trend()
-not.lt <- local.trend(nottem)
-# le cycle annuel perturbe l'analyse pluriannuelle
-# -> aggrégation des données par an
-nottem2 <- aggregate(nottem, 1, mean)
-nottem2
-plot(nottem2)
-# Graphe après aggrégation
-not.lt2 <- local.trend(nottem2)
-# La courbe en rouge (somme cumulées) amplifie les variations
-# Choisir manuellement les points à identifier
-# ATTENTION: identify() ne peut PAS être utilisée dans un R Markdown ou Notebook
-# Cette fonction doit être utilisée seulement dans le fenêtre console de R!!!
-identify(not.lt2) # Cliquer les points voulus, puis indiquer "finish"...
+not.lt <- local.trend(nottem) 
+#calcul les sommes cumulées les cycles sont tellement importants dans la série qu'ils masquent des variations à plus long terme. le cycle annuel perturbe l'analyse PLURIannuelle =>on élimine ce signal cyclique en travaillant sur des moyennes annuelles? pour ce faire on aggrége.
 
-# Création d'une série artificielle
-x2.random <- rnorm(100) # composante aléatoire = bruit
-plot(x2.random, type = "l") # graphe de ces données
+
+# aggrégation des données par an
+(nottem2 <- aggregate(nottem, 1, mean))
+#"Splits the data into subsets, computes summary statistics for each, and returns the result in a convenient form."
+##le 1 indique que l'on aggrége par année les données collectées.
+
+
+plot(nottem2)
+#graphique de la série initiale après aggrégation.
+
+not.lt2 <- local.trend(nottem2)
+# La courbe en rouge (=sommes cumulées) amplifie les variations. Globalement on a deux périodes: une avec des températues faibles l'autre avec temperatures fortes. Choisir manuellement les points à identifier. 
+identify(not.lt2) 
+# Selectionner cette ligne de code avec la précédente avec d'executer (Ctrl+Enter). Cliquer les points voulus (dans ce graphe-ci un point au début, un au milieu qd est T° très basses et un point à la fin), puis indiquer "finish"...
+# ATTENTION: identify() ne peut PAS être utilisée dans un R Markdown ou Notebook. Cette fonction doit être utilisée seulement dans le fenêtre CONSOLE de R!!! Sinon voici le SCRIPT À AJOUTER POUR QUE ÇA MARCHE : "Note: trend.test() in pastecs does not work well with current version of R with the SciViews::R extension. This version corrects the problem :
+
+trend.test <- function(tseries, R = 1) {
+  Call <- deparse(substitute(tseries))
+  x <- as.ts(tseries)
+  Names <- colnames(x)
+  if (R < 2) {
+    if (is.matrix(x) == TRUE) {
+      n <- ncol(x)
+      Time <- time(x)
+      res <- NULL
+      res[[1]] <- list(statistics = 1)
+      for (i in 1:n) {
+        res[[i]] <- cor.test(x[, i], Time, alternative = "two.sided",
+          method = "spearman")
+        res[[i]]$data.name <- paste(Names[i], " and time(",
+          Names[i], ")", sep = "")
+      }
+      names(res) <- Names
+    } else {
+      res <- cor.test(x, time(x), alternative = "two.sided",
+        method = "spearman")
+      res$data.name <- paste(Call, " and time(", Call,
+        ")", sep = "")
+    }
+  } else {
+    test.trend <- function(Tseries) {
+      Tseries <- as.ts(Tseries)
+      rho <- cor(Tseries, time(Tseries), method = "spearman")
+      rho
+    }
+    test.trends <- function(Tseries) {
+      Tseries <- as.ts(Tseries)
+      data.rank <- apply(Tseries, 2, rank)
+      rhos <- apply(data.rank, 2, cor, time(Tseries), method = "spearman")
+      rhos
+    }
+    if (is.matrix(x) == TRUE && ncol(x) > 1) {
+      res <- tsboot(x, test.trends, R = R, sim = "fixed",
+        l = 1)
+    } else {
+      dim(x) <- NULL
+      res <- boot::tsboot(x, test.trend, R = R, sim = "fixed",
+        l = 1)
+    }
+    boot.t <- res$t
+    boot.t0 <- res$t0
+    boot.R <- res$R
+    n <- ncol(boot.t)
+    if (is.null(n)) {
+      if (boot.t0 > 0) {
+        P <- (sum(boot.t > boot.t0)/boot.R) +
+          (sum(boot.t < -boot.t0)/boot.R)
+      } else {
+        P <- (sum(boot.t < boot.t0)/boot.R) +
+          (sum(boot.t > -boot.t0)/boot.R)
+      }
+    } else {
+      P <- NULL
+      if (boot.t0 > 0) {
+        for (i in 1:n)
+          P[i] <- (sum(boot.t[, i] > boot.t0[i])/boot.R) +
+            (sum(boot.t[, i] < -boot.t0[i])/boot.R)
+      } else {
+        for (i in 1:n)
+          P[i] <- (sum(boot.t[, i] < boot.t0[i])/boot.R) +
+            (sum(boot.t[, i] > -boot.t0[i])/boot.R)
+      }
+      names(P) <- dimnames(boot.t)[[2]]
+      res$p.value <- P
+    }
+  }
+  res
+}
+#".
+
+
+
+## Création d'une série artificielle
+x2.random <- rnorm(100) 
+# composante aléatoire = bruit. 100 valeur ont été générée de distribution normale avec moyenne nulle et ecart type =1.
+
+plot(x2.random, type = "l") 
+# graphe de ces données= du bruit.
+
+
 # Choix des moyennes
 x2.means <- c(rep(5, 50), rep(6, 50))
+#5 repeté 50 fois et 6 repeté 60 fois. voir aide en ligne ?rep.
+
 plot(x2.means, type = "l")
-# Signal observé = somme des 2 signaux
+#graphique deux deux moyennes.
+
+
+# Signal observé = somme des 2 signaux : (5 + 6) + bruit blanc ( = xrandom)
 x2 <- (x2.means + x2.random)
+
 plot(x2, type = "l")
+#graphique des moyennes appliquées sur le bruit: on voit une tendance générale  qui augmente légérement sur l'axe x(de la moyenne 5 à la moyenne 6).
+
+
 # Transformation en objet 'ts'
 x2.ts <- as.ts(x2)
+#as.ts coerce (=contraigner, forcer) an object to a time-series.
+
 plot(x2.ts)
+#meme graphe que le précédent mais avec comme axe x le temps et l'axe y x2.ts=serie temporelle.
+
+
 # Recherche de tendances à l'aide des sommes cumulées
 x2.lt <- local.trend(x2)
+
+
 # Identifier les zones à la souris (RAPPEL: pas dans R Markdown!)
 identify(x2.lt)
 
 
-## Analyse spectrale
-spectrum(nottem) # Cycle annuel
-# Technique très puissante, mais signal brut bruité => lissage nécessaire!
+
+## Analyse spectrale détecte des cycles plus subtils et même de cycles qui se surperposent qlq soit le signal on peut le représenter par un ensemble de sinus et de cos de periode croissante avec une valeur d'amplitude adéquate à chaque signal. si amplitude des différentes composantes est faible alors signal faible et inversément.
+spectrum(nottem) 
+# outil de détection du cycle annuel.
+# Technique très puissante, mais signal brut assez bruité => lissage nécessaire!
+
+
 # Lissage du spectre pour mieux voir
 ?spectrum
-# L'argument 'spans' affectue ce lissage (voir cours)
-# Il n'y a pas de règle stictes. Il faut juste deux nombres impairs
-spectrum(nottem, spans = c(3, 7))
-# Permet de mieux mettre en évidence les pics significatifs
 
+spectrum(nottem, spans = c(3, 7))
+# L'argument 'spans' affectue ce lissage. Il n'y a pas de règles stictes, il faut juste deux nombres impairs.
+# barre bleu signal commence à etre significtif.
+# Permet de mieux mettre en évidence les pics significatifs.
+# (3, 7) deux valeurs impairs deux passage de lissage, plus les valuers sont eleves plus le signal est lissé.
 ```
 
