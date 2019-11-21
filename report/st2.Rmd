@@ -37,10 +37,10 @@ nottem_trend_test <- trend.test(nottem, R = 999) # version boostrapée par ajout
 
 nottem_trend_test 
 #impression contenu de l'objet 
-## original = coeff corrélation, bias = asymétrie, erreur standard= ecart-type par rapport à la distribution normale => le plus important c'est le graphique.
+#original = coeff corrélation, bias = asymétrie, erreur standard= ecart-type par rapport à la distribution normale => le plus important c'est le graphique.
 
 plot(nottem_trend_test)
-#histogramme: distibution de p star bootstrapée, pointille = valeur du coeff de corrélation observé dans la série non réechantillone. plus le pointillé est extreme à gauche ou à droite dans la série plus on a tendance à penser que Ho est moins plausible=> tendance à rejetter Ho (==>pas de tendance globale). p calculé grâce a l'air sous la courbe (qui relierait les sommets de tous les barres verticales de l'histogramme) aux extremités du pointillé.
+#histogramme: distibution de p star bootstrapée, pointille = valeur du coeff de corrélation observé dans la série non réechantillone. plus le pointillé est extreme à gauche ou à droite dans la série plus on a tendance à penser que Ho est moins plausible=> tendance à rejetter Ho (=pas de tendance globale). p calculé grâce a l'air sous la courbe (qui relierait les sommets de tous les barres verticales de l'histogramme) aux extremités du pointillé.
 #quantile-quantile pour voir si la distibution boostrapée se rapproche d'une distribution normal ou pas. Reponse=OUI si les observations (ronds noirs) suivent la droite en pointillé.
 
 nottem_trend_test$p.value 
@@ -62,7 +62,7 @@ co2_trend_test$p.value
 ## Etude de la tendance locale
 # Utilisation des sommes cumulées avec local.trend()
 not.lt <- local.trend(nottem) 
-#calcul les sommes cumulées les cycles sont tellement importants dans la série qu'ils masquent des variations à plus long terme. le cycle annuel perturbe l'analyse PLURIannuelle =>on élimine ce signal cyclique en travaillant sur des moyennes annuelles? pour ce faire on aggrége.
+#calcul les sommes cumulées : les cycles sont tellement importants dans la série qu'ils masquent des variations à plus long terme. le cycle annuel perturbe l'analyse PLURIannuelle =>on élimine ce signal cyclique en travaillant sur des moyennes annuelles? pour ce faire on aggrége.
 
 
 # aggrégation des données par an
@@ -196,7 +196,7 @@ identify(x2.lt)
 
 
 
-## Analyse spectrale détecte des cycles plus subtils et même de cycles qui se surperposent qlq soit le signal on peut le représenter par un ensemble de sinus et de cos de periode croissante avec une valeur d'amplitude adéquate à chaque signal. si amplitude des différentes composantes est faible alors signal faible et inversément.
+## Analyse spectrale détecte des cycles plus subtils et même des cycles qui se surperposent. qlq soit le signal on peut le représenter par un ensemble de sinus et de cos de periode croissante avec une valeur d'amplitude adéquate à chaque signal. si amplitude des différentes composantes est faible alors signal faible et inversément.
 spectrum(nottem) 
 # outil de détection du cycle annuel.
 # Technique très puissante, mais signal brut assez bruité => lissage nécessaire!

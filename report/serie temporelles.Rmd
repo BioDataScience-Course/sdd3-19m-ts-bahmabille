@@ -66,10 +66,10 @@ time(schizo_ts)
 plot(schizo_ts) 
 # Ce graphique nous montre les valeurs des differents echantillonnages allant du temps 1 au 120. Remarquons que les observations sont reliées les unes autres en une ligne continue pour indiquer le dépendance des observations entre elles (contrairement au nuage de points).
 
+#((
 cycle(schizo_ts)
 #Si plusieurs observations mensuelles etaient faite sur plusieurs années, la fonction cycle agirait en numerotant tous les mois de janvier 1, février = 2, etc. Dans le cas du jeu de données schizo, les observation ne sont ni annuelles, ni mensuelles... dans la console toutes les observations sont numerotées 1. L'utilisation de la fonction cycle n'est pas justifié ici.
 #cycle gives the positions in the cycle of each observation. frequency returns the number of samples per unit time. deltat gives the time interval between observations.
-
 
 split(schizo_ts, cycle(schizo_ts))
 # Split separe la série en fonction des cycles. $'1' = toutes les mesure du mois de janvier, $'2' = février, etc. Ici toutes les observations sont reprises dans $`1` puisqu'il n'y a pas plusieurs cycles. L'utilisation de la fonction split n'est pas justifié ici.
@@ -101,7 +101,7 @@ not_stat
 plot(not_stat) 
 # Représentation graphique de ces valeurs
 #De part la ligne rouge, nous ne voyons ni d'augmentation ni de diminution constante, les résultats semblent plutots aléatoires. ?????????????????????????????????????????????????????????????????
-#
+#))
 
 ##Autocorrelation 
 #comparaison avec une série purement aléatoire
@@ -122,17 +122,18 @@ library(pastecs)
 
 # Test classique de signification du coefficient de Spearman (moins adapté pour les ts!)
 trend.test(schizo) 
-# Valeur p-value = 4.946e-16, le seuil alpha est de 5%, ici la p-value est nettement plus faible donc on ne rejette H0, la différence est donc significative. 
-# "Il doit exister une correlation significative entre les observations et le temps en présence d’une tendance. Mais comme les données ne sont pas indépendantes entre elles, on ne peut pas se référer à une distribution théorique. La distribution de référence est simulée en randomisant un grand nombre de fois les observations dans le temps (= technique du bootstrap)". Pas interessant de faire un simple test de correlation des serie spatio-temporelle, car d'office il devrait y en avoir. Donc le bootstrap est nettement plus important.
+# Valeur p-value = 4.946e-16, le seuil alpha est de 5%, ici la p-value est nettement plus faible donc on ne rejette H0, la différence est donc significative. Pas interessant de faire un simple test de correlation des serie spatio-temporelle, car d'office il devrait y en avoir. Donc le bootstrap est nettement plus important.
  
 schizo_trend_test <- trend.test(schizo, R = 999)
 # Même test, mais par bootstrap (mieux!) => R = 999, rééchantillonage 999x, sachant qu'il y a en une qui est la serie initiale; pour un totale de 1000.
+#"Il doit exister une correlation significative entre les observations et le temps en présence d’une tendance. Mais comme les données ne sont pas indépendantes entre elles, on ne peut pas se référer à une distribution théorique. La distribution de référence est simulée en randomisant un grand nombre de fois les observations dans le temps (= technique du bootstrap)".
 
 schizo_trend_test
+#original = coeff corrélation, bias = asymétrie, erreur standard= ecart-type par rapport à la distribution normale => le plus important c'est le graphique. original= -0.6548362, correlation inverse entre l'axe y et le temps, l'activité cérébrale diminue avec le temps.
 
-# Visualisation graphique
 plot(schizo_trend_test)
-#INTERPRETATION???
+#histogramme: distibution de p bootstrapée, pointille = valeur du coeff de corrélation observé dans la série non réechantillone. plus le pointillé est extreme à gauche ou à droite dans la série plus on a tendance à penser que Ho est moins plausible=> tendance à rejetter Ho (=pas de tendance globale). p calculé grâce a l'air sous la courbe (qui relierait les sommets de tous les barres verticales de l'histogramme) aux extremités du pointillé. La droite verticale pointillée est à l'extreme gauche (tendance à penser qu'il y a une tendance générale déjà dan sla série initiale), d'où la faible valeur de p; p<alpha==> on rejette Ho: il y a une tendance générale.
+#quantile-quantile pour voir si la distibution boostrapée se rapproche d'une distribution normal ou pas. Reponse=OUI si les observations (ronds noirs) suivent la droite en pointillé. C'est bien le cas ici exception faite des premières et des dernières observations.
 
 schizo_trend_test$p.value 
 # Valeur p associée au test bootstrappé# 0 -> Il y a bel et bien une tendance significative au seuil alpha de 5%.
@@ -141,9 +142,19 @@ schizo_trend_test$p.value
 ## Etude de la tendance locale
 # Utilisation des sommes cumulées avec local.trend()
 schizo.lt <- local.trend(schizo_ts)
-# le cycle annuel perturbe l'analyse pluriannuelle
-# -> aggrégation des données par an, on indique 1 car l'unite de temps dans cette serie est de 1 an.
+#en pointillé on voit la série initiale. la courbe rouge (=sommes cumulées) chaque segment de la ligne brisée représente une tendance locale : une période où la moyenne ne varie pas: la valeur de cette moyenne est donnée par la pente du segment additionnée de r (=moyenne de toute la série).Par rapport à la moyenne globale des observations, soit on est au-dessus ou en-dessous. La série rouge amplifie donc les variations. Ici on voit un premier segment de pente positive, puis un segment de pente presque nulle suivi d'un segment de pente négative. Des valeur précises sont données par la fonction identify.
+
+identify(schizo.lt)
+# Selectionner cette ligne de code avec la précédente avec d'executer (Ctrl+Enter). Cliquer les points voulus (dans ce graphe-ci un point au début, un au milieu qd est T° très basses et un point à la fin), puis indiquer "finish"...
+# ATTENTION: identify() ne peut PAS être utilisée dans un R Markdown ou Notebook. Cette fonction doit être utilisée seulement dans le fenêtre CONSOLE de R!!!
+# Recopier la ligne de code précédente aussi dans la console.
+#La console nous donne : $pos[1]   6  63  80 119 (position de points selectionnés, 4 en tout). $trends[1] 73.57895 53.17647 33.82051 (pente des 3 segments). $k[1] 56.325 (moyenne générale).
+#en tout on voit une augmentation de l'activité cérébrale puis on stagnation du 63 ième jour jusqu'à environ le 80 ième jour et enfin un diminution de l'activité cérébrale jusqu'au 120 ième jour.
+
+#((
+#aggrégation des données, on indique 1 car l'unite de temps dans cette serie est de 1.
 schizo2 <- aggregate(schizo_ts, 1, mean)
+#1 correspond à la fréquence de la time série, tu es obligée de mettre le meme chiffre. Dans ce cas-ci il n'est pas pertinent d'utiliser la fonction aggregate car elle permet d'aggréger (écraser) les données pour un cycle et ainsi obtenir un aperçu sur les tendances locales pour plusieurs cycles. Dons quand il n'y a pas de cycles, il ne faut pas utiliser aggregate.
 schizo2
 plot(schizo2)
 # Graphe après aggrégation : 
@@ -151,8 +162,8 @@ plot(schizo2)
 # Choisir manuellement les points à identifier
 # ATTENTION: identify() ne peut PAS être utilisée dans un R Markdown ou Notebook
 # Cette fonction doit être utilisée seulement dans le fenêtre console de R!!!
-not.lt2 <- local.trend(schizo2)
-identify(not.lt2) # Cliquer les points voulus, puis indiquer "finish"...
+schizo.lt2 <- local.trend(schizo2)
+identify(schizo.lt2) # Cliquer les points voulus, puis indiquer "finish"...
 #LA CONSOLE nous donne: 
 #$pos[1]   7  63 119  trois points : un au début, un au milieu et un à la fin.
 #$trends
@@ -160,16 +171,16 @@ identify(not.lt2) # Cliquer les points voulus, puis indiquer "finish"...
 #$k
 #[1] 56.325 : moyenne en tout
 
-## Analyse spectrale
-spectrum(schizo_ts) # Cycle annuel
+#))
+
+
+## Analyse spectrale : détecte des cycles plus subtils et même des cycles qui se surperposent. qlq soit le signal on peut le représenter par un ensemble de sinus et de cos de periode croissante avec une valeur d'amplitude adéquate à chaque signal. si amplitude des différentes composantes est faible alors signal faible et inversément.
+spectrum(schizo_ts) 
 # Technique très puissante, mais signal brut bruité => lissage nécessaire!
-# Lissage du spectre pour mieux voir
-# L'argument 'spans' affectue ce lissage (voir cours)
-# Il n'y a pas de règle stictes. Il faut juste deux nombres impairs
+# L'argument 'spans' affectue ce lissage, il n'y a pas de règle stictes, il faut juste deux nombres impairs.
 spectrum(schizo_ts, spans = c(3, 5))
 # Permet de mieux mettre en évidence les pics significatifs
 
-# 
 ```
 
 
