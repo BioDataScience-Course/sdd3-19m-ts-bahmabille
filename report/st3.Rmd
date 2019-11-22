@@ -37,6 +37,7 @@ co2.avg
 plot(co2.avg, col = 1:3)
 # On voit bien que le choix judicieux de la fenêtre a permis d'éliminer complètement l'effet saisonnier
 #premier graphique=serie de depart, (après filtrage=) signal à longterme, residus. Si on fait times=1 on voit que c'est pas mal mais il manque un peu. si times=10, faut considerer que les techniques utilisees ne sont pas parfaites, on voit que le signal est nettement plus lissé
+
 # Même chose sur nottem
 not.avg <-  tsd(nottem, method = "average", type = "additive",
   order = 6, times = 10)

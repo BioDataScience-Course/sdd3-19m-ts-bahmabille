@@ -3,6 +3,7 @@
 library(pastecs)
 
 
+
 ## Décomposition par médianes mobiles
 # Pas très utile sur nottem ou co2, mais essayez par vous-même...
 
@@ -24,7 +25,7 @@ lines(c(41, 41), c(0, 10), col = 4, lty = 2)
 lines(c(46, 46), c(0, 10), col = 4, lty = 2)
 text(c(8.5, 21, 27.5, 35, 43.5, 57), 8.7, labels = c("Peripheral Zone",
   "D1", "C", "Front", "D2", "Central Zone"))
-#avec ses lignes vertivales on voit si palliers correspondent a limites entre differentes masses d'eau: ici oui: palliers significatifs."
+#avec ses lignes verticales on voit si palliers correspondent a limites entre differentes masses d'eau: ici oui: palliers significatifs."
 
 ## Méthode des différences
 data(nottem)
@@ -58,9 +59,9 @@ spectrum(co2.dif.ts[, 1])
 
 
 
-## Décomposition sinusoidale des températures et du CO2
+## Décomposition sinusoidale des températures et du CO2 : grace a la regression (lm)
 Time_nottem <- time(nottem)
-tser.sin <- lm(nottem ~ I(cos(2*pi*Time)) + I(sin(2*pi*Time_nottem)))
+tser.sin <- lm(nottem ~ I(cos(2*pi*Time_nottem)) + I(sin(2*pi*Time_nottem)))
 #I=identity, necessaire pour que R se retrouve car on a pas de vaariables cos, sin etc.., ainsi R sait qu'il s'agit de ligne de code.
 summary(tser.sin)
 #ces resultats ne doivent pas etre interpretes ici: sinon ERREUR: seulement le graphique est pertinent.
@@ -83,7 +84,7 @@ plot(tser.dec, col = c(1, 4), stack = FALSE, resid = FALSE, lpos = c(0, 4))
 #mnt superposition marche bien.
 
 
-## Décomposition par loess
+## Décomposition par loess : qd il y a saisonnalité
 ?decloess
 #t.window=NULL: ÇA VEUT DIRE QU'IL DETERMINERA TOUT SEUL L'ORDRE LE PLUS ADÉQUAT POUR FILTRER==> DETERMINE TT SEUL LA TAILLE DE LA FENETRE.
 
