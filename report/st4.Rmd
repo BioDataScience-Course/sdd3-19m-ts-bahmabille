@@ -8,9 +8,12 @@ library(pastecs)
 
 # Données relatives à du plancton le long d'un transect
 data(marbio)
-ClausoB.ts <- ts(log(marbio$ClausocalanusB + 1))
+ClausoB.ts <- ts(log(marbio$ClausocalanusB + 1)) 
+#transformation de l'objet dataframe à objet ts. ordres de grandeur trèès large entre les concentration faible et les plus fortes. on a des valeurs nulles donc on fait log+1, pour contrer cela. ici les observations se succedent bien le long du transectt==> ok:serie regulière.
 ClausoB.dec <- decmedian(ClausoB.ts, order = 2, times = 10, ends = "fill")
+#choix de l'ordre et de times, essayer plusieurs valeurs, éviter valeur trop importantes pour pas trop lisser la serie mais suffisant pour avoir une difference par rapport a la srie initiale. end=par defaut.
 plot(ClausoB.dec, col = c(1,4,2), xlab = "stations")
+#seire initiale en noir: pic du a courants froids. en bleu il y a des palliers: significatif? tester ici bas
 
 # Visualisation des différentes masses d'eaux sur le graphique (pour interprétation)
 plot(ClausoB.dec, col = c(0, 2), xlab = "stations", stack = FALSE, resid = FALSE)
@@ -21,7 +24,7 @@ lines(c(41, 41), c(0, 10), col = 4, lty = 2)
 lines(c(46, 46), c(0, 10), col = 4, lty = 2)
 text(c(8.5, 21, 27.5, 35, 43.5, 57), 8.7, labels = c("Peripheral Zone",
   "D1", "C", "Front", "D2", "Central Zone"))
-
+#avec ses lignes vertivales on voit si palliers correspondent a limites entre differentes masses d'eau: ici oui: palliers significatifs."
 
 ## Méthode des différences
 data(nottem)
@@ -39,6 +42,11 @@ plot(co2)
 co2.dif <- tsd(co2, lag = 1, order = 3, method = "diff")
 co2.dif
 plot(co2.dif, col = 1:3)
+#ligne rouge: decalage de 6 : au debut il y a artefact, lié à la methode elle meme. residus en vert: il reste quand meme une partie de la tendance
+#si decalage de 12: tendance generale et l'ensemble de la variation cycliques sont eliminé de la ligne rouge et se retrouvent tous les deux dans les residus. dans ligne rouge il ne reste plus que du bruit.
+#decalages de 1 : on a elimine encore plus, il ne reste plus que du bruit.
+#ccl ok pour eliminer tendance mais difficultés avec les cycles.
+
 # Spectre de co2
 spectrum(co2)
 # Extraire série de co2 diff
@@ -48,41 +56,59 @@ plot(co2.dif.ts) # calcul de deux séries: filtrée et résidus
 # Spectre de la première série (la série filtrée)
 spectrum(co2.dif.ts[, 1])
 
+
+
 ## Décomposition sinusoidale des températures et du CO2
-Time <- time(nottem)
-tser.sin <- lm(nottem ~ I(cos(2*pi*Time)) + I(sin(2*pi*Time)))
+Time_nottem <- time(nottem)
+tser.sin <- lm(nottem ~ I(cos(2*pi*Time)) + I(sin(2*pi*Time_nottem)))
+#I=identity, necessaire pour que R se retrouve car on a pas de vaariables cos, sin etc.., ainsi R sait qu'il s'agit de ligne de code.
 summary(tser.sin)
+#ces resultats ne doivent pas etre interpretes ici: sinon ERREUR: seulement le graphique est pertinent.
 tser.reg <- predict(tser.sin)
+#prédiction
 tser.dec <- decreg(nottem, tser.reg)
+#injection de ces resultats pour pouvoir ensuite faire la decomposition : on obtient objet tsd à la fin.
 plot(tser.dec, col = c(1, 4), xlab = "time (years)", stack = FALSE, resid = FALSE, lpos = c(0, 4))
+#residus pas pris en compte ici. courbe bleue=regression : ici elle se superpose bien à la série initiale.
+
+
 
 Time <- time(co2)
-# Attention : ici on superpose un modèle linéaire (tendance) à un modèle
-# sinusoïdal (cycle), mais on aurait très bien pu éliminer la tendance d'abord
+# Attention : ici on superpose un modèle linéaire (tendance) à un modèle sinusoïdal (cycle), mais on aurait très bien pu éliminer la tendance d'abord ou complexifier le modèle lm: combiner signal sinusoidale avec une droite de tendance (ici bas: "+ Time").
 tser.sin <- lm(co2 ~ I(cos(2*pi*Time)) + I(sin(2*pi*Time)) + Time)
 summary(tser.sin)
 tser.reg <- predict(tser.sin)
 tser.dec <- decreg(co2, tser.reg)
 plot(tser.dec, col = c(1, 4), stack = FALSE, resid = FALSE, lpos = c(0, 4))
+#mnt superposition marche bien.
 
 
 ## Décomposition par loess
-## sans tendance et fenêtre périodique
 ?decloess
+#t.window=NULL: ÇA VEUT DIRE QU'IL DETERMINERA TOUT SEUL L'ORDRE LE PLUS ADÉQUAT POUR FILTRER==> DETERMINE TT SEUL LA TAILLE DE LA FENETRE.
+
+
+## sans tendance et fenêtre périodique
 co2.loess <- tsd(co2, method = "loess",
   trend = FALSE, s.window = "periodic")
+# s.window = "periodic" : pour extraire signal avec unité de temps=1. 
 plot(co2.loess, col = 1:3)
+#en vert on voit que l'effet saisonnier retiré est le meme chaque année.
+
+
 ## Avec variation d'une année à l'autre
 co2.loess <- tsd(co2, method = "loess",
   trend = FALSE, s.window = 13)
+#pour extraire signal avec unité de temps=1 mais variation annuelle.
 plot(co2.loess, col = 1:3)
-# Elimine variation saisonière mais elle varie un peu
+# Elimine variation saisonière mais elle varie un peu.
 
 # Avec tendance à long terme et cycle
 co2.loess <- tsd(co2, method = "loess",
   trend = TRUE, s.window = 13)
 plot(co2.loess, col = 1:4)
-# On décompose la série initiale en 3 composantes: tendance, cycle et résidus
+#Avec trend=TRUE: On décompose la série initiale en 3 composantes: tendance, cycle et résidus. signal en rouge : le plus lisse possible, effet de bruit bien enlevé.
+
 
 ## Extraction des composantes en séries temporelles
 co2.loess.ts <- tseries(co2.loess)
@@ -99,5 +125,8 @@ plot(co2.loess.ts[, 3])
 acf(co2.loess.ts[, 3]) # Quasi plus d'autrocorrélation
 spectrum(co2.loess.ts[, 3], span = c(3, 7)) # Tout n'est pas éliminé
 
+
+
+#si dans analyse spectral il reste bcp de zones significatives alors l'analyse n a pas bien marché. idealement ACF non significatif. Lissage bie fait: pas de pics non expliqués.
 ```
 
