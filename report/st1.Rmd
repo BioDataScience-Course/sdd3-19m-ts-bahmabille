@@ -80,6 +80,6 @@ x.ts <- ts(x, start = 1920.000, frequency = 12)
 x.ts
 # Cette série n'a pas d'autocorrélation
 acf(x.ts) #graphique : premier graphique a faire pour voir correlation par après.
-
 ```
+
 
