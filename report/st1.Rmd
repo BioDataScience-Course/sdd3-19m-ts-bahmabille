@@ -2,61 +2,84 @@
 # Séries spatio-temporelles (première partie)
 
 # Exemple de série temporelle
-data(nottem)
+data(nottem) 
 nottem
-?time
+?nottem  # fait partie du package data set; temperature pas en degre celsius. c est pas un tableau cas pas variable car sinon il n y aurait qu'une seule colonne. L'objet ne contient pas un tableau de 12 colonne et ... lignes, dans R c'est repris d'une autre facon. La presentation ici obbtenue depend du type de variable.
 
 # Type d'objet de nottem
-class(nottem) # Objet de type 'ts' (time series)
+class(nottem) # Objet de type 'ts' (time series). indique le type de variable : ts ou mts pour ici. (sinon il y a dataframe, dbl...)
+#tsp est un attribut, une données qu'on ajoute au tableau de données, qui indique l'intervalle entre les observations. 
+
 # Structuration de l'objet en interne
-unclass(nottem)
-# C'est un vecteur de nombres de 1 a 240
-# avec un attribut tsp depart, fin et fréquence
-# unité année, mesures mensuelles => 12 observations par unité de temps
+unclass(nottem)#retire le type de l'objet
+# C'est un vecteur de nombres de 1 a 240,  avec un attribut tsp depart, fin et fréquence. L'unité année, mesures mensuelles => 12 observations par unité de temps.
 # 1 / mois .917 ! 11/12 de l'année (voir dernier mois)
-time(nottem)
+
+time(nottem) #fonction generique reagit differement en fonction de la classe du jeu de données.
+#time creates the vector of times at which a time series was sampled.
+#a condition qu'on ait des series regulieres. on encode le minimum necessaire, concernant le temps il faut au moins 3 infos : nombre d'observations (qui pourrait en soit etre deduit), la date de debut, la date de fin et la frequence observation par rapport a une unite de temps. ce besoin d'economiser la memoire est un heritage de S outil statistique de 1970 ou la memoire devait etre economisee, plus besoin auj dans R. R demande qu'on encode le temps sous forme decimale. si on considère qu'un mois contient 30.5 jours, et qu'il y a 12 mois. en l'an 1939 plus un douzième du mois =917. 12.000 = première seconde après minuit.
 
 # Graphique
-plot(nottem) # fournit le graphe le plus adéquat (connexion des points)
+ 
+# on ne fait pas de nuages de points car utilisé pour symboliser visuellement l'indépendance des points. Or ici il y a dependance donc on doit relier les points au minimum avec une ligne brisée.
+plot(nottem) # fournit le graphe le plus adéquat (connexion des points). on a en axe x le temps en y le temperature, puis on relis les observations. on pourrait indique où les obs ont etait faites avec pt plus gras mais pas fait generalement. ete chaud, hiver froid, parfois ete ou hiver plus long/court.
+
 # Calcul des cycle
+ 
+ # pour chaque obs on a un cycle de 1 an. a l'aide de cela on va pouvoir diviser(splitter) les obs.
 cycle(nottem)
 # Tous les mois de janvier sont numérotés 1, février = 2, etc.
-# Séparer la série en fonction des cycles
+
+# Séparer la série en fonction des cycles : premier element de la liste= jan, puis fev puis...
 split(nottem, cycle(nottem))
-# $'1' = toutes les mesure du mois de janvier, $'2' = février, etc.
-# Boites de dispersion des données mensuelles
+# $1 = toutes les mesure du mois de janvier, $2 = février, etc.
+
+# Boites de dispersion des données mensuelles : en juillet les tem varient plus qu'en jan.
 boxplot(split(nottem, cycle(nottem)))
-# Fonction personnalisée pour plus de confort
+
+# Fonction personnalisée pour plus de confort : 
+# boxplot_by_cycle est le nom de  la fonction "function", ts est son argument, ici ce sera son seul argument. C'est pour ca que après on appelle ts dans split et dans cycle. ensuite on applique ts à nottem, donc dans ts il y aura nottem, le jeu de données. permet de ne pas devoir corriger tt le lignes de codes plus haut s'il y a des erreurs. 
+# function apparait en memoire (ds environnement).
+
 boxplot_by_cycle <- function(ts)
   boxplot(split(ts, cycle(ts)))
 
 boxplot_by_cycle(nottem)
 
+
 # Statistiques glissantes
+# ex si on veut faire les moyennes pas tt les ans mais tt les 3 ans ou 10 ans.
 library(pastecs) # besoin de ce package
 ?stat.slide
+#il faut indiquer comment on veut couper, qu est ce qu on veut calculer : xcut, stat. 
+#statistiques de pennington : 0 vrais 0 ou pas: juste incapable de capturer spécimen.
+
 # Statistiques par 6 ans
 # Vecteur temps
+# deltat=6 : statistiques tous les 6 ans.
 not.stat <- stat.slide(time(nottem), nottem, xmin = 1920, deltat = 6)
 not.stat
 # Calcul de quelques descripteurs statistiques
+
 # Représentation graphique de ces valeurs
-plot(not.stat) # note: température moyenne en constante augmentation
+plot(not.stat) # note: température moyenne en constante augmentation: car 80 ans plus tard il y a augmentation de la tem moyenne de l atmosphere. premier trait rouge=erreur, ce ne devrait pas etre là. trait rouge horizontal=xmi (the minimal value in the time-scale to use for constructing a vector of equally spaced breaks).
 
 # Propriétés de la série
 # Autocorrélation
 ?acf
-acf(nottem)
+acf(nottem) #graphique d'autocorrelation : l'axe x c'est le décalage; exprimé dans l'unite de mesure du temps : ici un an. a 0 l'autocorrelation vaut trjs 1,  puis on a decalé 1x, 2x 3x..12x=un an. plus on va vers +1 plus la série est autocorrelee avec elle meme. seuil alpha de 5% : traits en bleu : si autocorrelee à l'intérieur deux barres bleues alors n'est pas significative. On voit que c'est un cycle annuel. il y a une autocorrelation forte jusqu'a 2 mois et puis c'est des cycles de 1 an. ce graphique va etre comparee avec serie sans autocerrelation: fait exprès : on génére des nombres aléatoires 240 avec ts.
 
 # Comparaison avec une série purement aléatoire
-x <- rnorm(240) # vecteur avec données aléatoires
+x <- rnorm(240) # vecteur avec données aléatoires: r=random, norm= distribution normale, 240 obs genere aléatoirement. si on fait histogramme de ceci on voit allure de courbe en cloche. ce sont juste de nombre (pas des valeurs d'une variable, juste des nombres au hasard pour montrer qu'il n'y a pas de correlation).
 x
+
 # Création d'une série temporelle
+# comme tantot debut en 1920.000 et f de 12.
 ?ts
 x.ts <- ts(x, start = 1920.000, frequency = 12)
 x.ts
 # Cette série n'a pas d'autocorrélation
-acf(x.ts)
+acf(x.ts) #graphique : premier graphique a faire pour voir correlation par après.
 
 ```
 

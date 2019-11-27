@@ -196,7 +196,8 @@ identify(x2.lt)
 
 
 
-## Analyse spectrale détecte des cycles plus subtils et même des cycles qui se surperposent. qlq soit le signal on peut le représenter par un ensemble de sinus et de cos de periode croissante avec une valeur d'amplitude adéquate à chaque signal. si amplitude des différentes composantes est faible alors signal faible et inversément.
+## Analyse spectrale 
+## détecte des cycles plus subtils et même des cycles qui se surperposent. qlq soit le signal on peut le représenter par un ensemble de sinus et de cos de periode croissante avec une valeur d'amplitude adéquate à chaque signal. si amplitude des différentes composantes est faible alors signal faible et inversément.
 spectrum(nottem) 
 # outil de détection du cycle annuel.
 # Technique très puissante, mais signal brut assez bruité => lissage nécessaire!
