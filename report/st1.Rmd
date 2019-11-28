@@ -2,7 +2,7 @@
 # Séries spatio-temporelles (première partie)
 
 # Exemple de série temporelle
-data(nottem) 
+data(nottem)
 nottem
 ?nottem  # fait partie du package data set; temperature pas en degre celsius. c est pas un tableau cas pas variable car sinon il n y aurait qu'une seule colonne. L'objet ne contient pas un tableau de 12 colonne et ... lignes, dans R c'est repris d'une autre facon. La presentation ici obbtenue depend du type de variable.
 
