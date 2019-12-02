@@ -1,0 +1,85 @@
+---
+title: "Fire"
+output: html_notebook
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#??????????
+```
+
+
+
+
+### Les feux de forêts au Canada
+
+On dénombre le nombre d'acres de forêt qui est détruit par le feu. Est ce que les feux de forêts sont-ils en augmentation ?
+**Note** :  1  acre correspond à 4046 m^2^
+
+> Jeu de données : fire.txt
+
+```{r,fig.align='center', echo=FALSE, out.width= '55%'}
+knitr::include_graphics("images/feux_forets.jpg")
+```
+
+```{r}
+library(readr)
+fire <- read_csv("../data/fire.txt")
+#View(fire)
+#il ne faut pas lancer Sciview en meme temps que readr, sinon il y aura un conflit de package.
+
+class(fire) #ici nous voyons que fire contient des objets du type "spec_tbl_df", "tbl_df","tbl" et "data.frame". Nous allons donc le transformer en objet ts plus bas.
+
+unclass(fire) #nous voyons qu'il s'agit d'un vecteur allant de 1 à 70 nombres, avec comme attribut attr(,"row.names"), attr(,"spec"), cols( earthquake = col_double()).
+
+
+(fire_ts <- ts(fire$acres, start = 1.000, frequency = 1))
+#on met f=1 car pas précisé, une observation par unité de temps. on precise que dans le jeu de données fire qu'on veut la variable acres meme si le jeu de données ne contient que cette variable, il faut la préciser sinon il va considerer l'objet comme un (multiple time serie) mts."
+
+time(fire_ts) 
+#Dans la console on peut observer le vecteur de temps qui nous indique les moments où les échantillonnages ont étés effectués. Nous voyons un vecteur qui va du moment 1 au 70, avec comme Time Series: Start = 1.000, Frequency = 1.
+#"time creates the vector of times at which a time series was sampled".
+
+plot(fire_ts) 
+# Ce graphique nous montre les valeurs des differents echantillonnages. Remarquons que les observations sont reliées les unes autres en une ligne continue pour indiquer le dépendance des observations entre elles (contrairement au nuage de points).
+
+cycle(earthq_ts)
+#Si plusieurs observations mensuelles etaient faite sur plusieurs années, la fonction cycle agirait en numerotant tous les mois de janvier 1, février = 2, etc. Dans le cas du jeu de données fire, les observation ne sont pas mensuelles... dans la console toutes les observations sont numerotées 1. L'utilisation de la fonction cycle n'est pas justifié ici. Celle de spplit et des boxplots correspondants non plus.
+#cycle gives the positions in the cycle of each observation. frequency returns the number of samples per unit time. deltat gives the time interval between observations.
+
+##Statistiques glissantes
+library(pastecs) 
+
+(fire_stat2 <- stat.slide(time(fire_ts), fire_ts, xmin = 1.000, deltat = 10))
+# Vecteur temps par intervalles de 5.
+# Calcul de quelques descripteurs statistiques : de 1 à 10 lignes = statistiques | de 1 à 14 colonnes = intervalles de temps pour lesquels chacune des statistiques a été calculée.
+
+plot(fire_stat2) 
+# Représentation graphique de ces valeurs
+#De part la ligne rouge, nous ne voyons ni d'augmentation ni de diminution constante, les résultats semblent plutots aléatoires.
+
+
+##Autocorrelation 
+acf(fire_ts) 
+#Pour fire l'autocorrelation il n'y a pas de correlation visible entre la valeurs des observations et le temps.
+```
+
+
+```{r}
+## Identification de tendance à long terme
+# Tendance globale
+library(pastecs)
+# Test par bootstrap
+(fire_trend_test <- trend.test(fire_ts, R = 999))
+#original = coeff corrélation, bias = asymétrie, erreur standard= ecart-type par rapport à la distribution normale => le plus important c'est le graphique.
+#original= -0.041 : correlation inverse négligeable.
+
+plot(fire_trend_test)
+#droite pointillée au milieu de l'histogramme=p élevé = p > alpha = on ne rejette pas Ho il n'y a donc pas de tendance générale.
+#qqplot: ronds noirs=observations suivent bien la droite pointillée, donc la distribution est normale.
+
+# Valeur p associée au test bootstrappé
+fire_trend_test$p.value
+# Valeur p associée au test bootstrappé : 0,73 > 0,05 -> pas de tendance non significative au seuil alpha de 5%
+```

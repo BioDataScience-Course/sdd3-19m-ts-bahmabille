@@ -1,0 +1,66 @@
+---
+title: "Beer"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#??????????
+```
+
+
+### La production de bières
+
+La production mensuelle de bière (mégalitres) est encodée mensuellement depuis 1956. Décomposez cette série avec la méthode des moyennes mobiles
+
+```{r,fig.align='center', echo=FALSE, out.width= '65%'}
+knitr::include_graphics("images/beer.jpg")
+```
+
+> Jeu de données : beer.txt
+
+```{r}
+library(readr)
+beer <- read_csv("../data/beer.txt")
+#View(beer)
+
+class(beer) 
+
+beer_ts <- ts(beer, start = 1956, frequency = 12) #on met f=12 car précisé, une observation par mois pour chaque année=unité de temps.
+beer_ts
+acf(beer_ts)
+time(beer_ts) 
+
+plot(beer_ts) 
+cycle(beer_ts)
+split(beer_ts, cycle(beer_ts))
+boxplot(split(beer_ts, cycle(beer_ts)))
+boxplot_by_cycle <- function(ts)
+  boxplot(split(ts, cycle(ts)))
+
+boxplot_by_cycle(beer_ts)
+
+notm.stat <- stat.slide(time(beer_ts), beer_ts, xmin = 1956, deltat = 6)
+notm.stat
+
+plot(notm.stat) 
+```
+
+
+```{r}
+## Identification de tendance à long terme
+# Tendance globale
+library(pastecs)
+# Test par bootstrap
+(beer_trend_test <- trend.test(beer_ts, R = 999))
+#original = coeff corrélation, bias = asymétrie, erreur standard= ecart-type par rapport à la distribution normale => le plus important c'est le graphique.
+#original= 0.69 : correlation directe non négligeable.
+
+plot(beer_trend_test)
+##droite pointillée aux extremes= p faible= p<alpha = on rejette Ho il y a donc une tendance générale.
+#qqplot: ronds noirs = observations suivent bien la droite pointillée, donc la distribution est normale.
+
+# Valeur p associée au test bootstrappé
+beer_trend_test$p.value
+# Valeur p associée au test bootstrappé : 0 < 0,05 -> tendance significative au seuil alpha de 5%
+```

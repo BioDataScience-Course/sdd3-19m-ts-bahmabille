@@ -44,7 +44,7 @@ plot(nottem_trend_test)
 #quantile-quantile pour voir si la distibution boostrapée se rapproche d'une distribution normal ou pas. Reponse=OUI si les observations (ronds noirs) suivent la droite en pointillé.
 
 nottem_trend_test$p.value 
-# Valeur p associée au test bootstrappé : 0.20 -> pas de tendance significative au seuil alpha de 5%.
+# Valeur p associée au test bootstrappé : 0.42 -> pas de tendance significative au seuil alpha de 5%.
 
 (co2_trend_test <- trend.test(co2, R = 999))
 #original=coeff de correlation de 0.988!!-->tendance significative.
@@ -55,7 +55,7 @@ plot(co2_trend_test)
 #qqplot : les observations suivent une distribution normale exception faite des premières et des dernières.
 
 co2_trend_test$p.value
-#si on fait reference  à la distribution du coeff de corrélation (ligne verticale pointillé dans l'histogramme), elle:::: est tres extreme à droite => valeur faible de p => p vaut zero ===> tendance très significative.
+#si on fait reference  à la distribution du coeff de corrélation (ligne verticale pointillé dans l'histogramme), elle est tres extreme à droite => valeur faible de p => p vaut zero ===> tendance très significative. p=0<< 0.05=alpha.
 
 
 

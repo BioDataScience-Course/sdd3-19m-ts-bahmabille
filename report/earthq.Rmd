@@ -1,0 +1,79 @@
+---
+title: "Earthquake"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#??????????
+```
+
+
+
+### Les tremblements de terre dans le monde
+
+Les tremblements de terre d'une magnitude supérieur à 7 sont comptabilisé dans le monde entre 1900 et 1998. Y a t'il des périodes de fortes activités sismiques ? 
+
+> Jeu de données : earthq.txt
+
+```{r,fig.align='center', echo=FALSE, out.width= '55%'}
+knitr::include_graphics("images/earthquake.jpg")
+```
+
+```{r}
+library(readr)
+earthq <- read_csv("../data/earthq.txt")
+#il ne faut pas lancer Sciview en meme temps que readr, sinon il y aura un conflit de package.
+#View(earthq)
+
+class(earthq) #ici nous voyons que earthq contient des objets du type "spec_tbl_df", "tbl_df","tbl" et "data.frame". Nous allons donc le transformer en objet ts plus bas.
+
+unclass(earthq) #nous voyons qu'il s'agit d'un vecteur de nombres de 1 à 99, avec comme attribut attr(,"row.names"), attr(,"spec"), cols( earthquake = col_double()).
+
+
+(earthq_ts <- ts(earthq$earthquake, start = 1900.000, end = 1998.000, frequency = 1))
+#on met f=1 car pas précisé, une observation par un. on precise que dans le jeu de données earthq qu'on veut la variable earthquake meme si le jeu de données ne contient que cette variable, il faut la préciser sinon il va considerer l'objet comme un (multiple time serie) mts."
+
+time(earthq_ts) 
+#Dans la console on peut observer le vecteur de temps qui nous indique les moments où les échantillonnages ont étés effectués. Nous voyons un vecteur qui va de l'année 1900 à l'année 1998, avec comme Time Series: Start = 1900, End = 1998, Frequency = 1.
+#"time creates the vector of times at which a time series was sampled. 
+
+plot(earthq_ts) 
+# Ce graphique nous montre les valeurs des differents echantillonnages allant du temps 1900 au 1998. Remarquons que les observations sont reliées les unes autres en une ligne continue pour indiquer le dépendance des observations entre elles (contrairement au nuage de points).
+
+cycle(earthq_ts)
+#Si plusieurs observations mensuelles etaient faite sur plusieurs années, la fonction cycle agirait en numerotant tous les mois de janvier 1, février = 2, etc. Dans le cas du jeu de données earthq, les observation ne sont pas mensuelles... dans la console toutes les observations sont numerotées 1. L'utilisation de la fonction cycle n'est pas justifié ici, inutile d'utiliser split et de representer les donnees mensuellement sous forme de boxplots.
+
+##Statistiques glissantes???????UTILE SI PAS DE CYCLES??? 
+library(pastecs) 
+# besoin de ce package
+
+(not_stat1 <- stat.slide(time(earthq_ts), earthq_ts, xmin = 1910, deltat = 10))
+# Vecteur temps par intervalles de 10 ans.
+# Calcul de quelques descripteurs statistiques : de 1 à 10 lignes = statistiques | de 1 à 7 colonnes = intervalles de temps pour lesquels chacune des statistiques a été calculée.
+plot(not_stat1) 
+#en calculant les statistiques à partir de 1910 avec un deltat de 10 ans nous voyons qu'un pic des statiques est obtenu entre 1940 et 1950. en effet la valeur maximal est de 41, la minimale de 23, la mediane de 27.5 et la moyenne de 29.8; Ce pic est aussi visible dans le graphe où la valeur de y est plus élevée entre 1940 et 1950. un minimum est obtenu entre 1980 et 1990.
+
+##Autocorrelation 
+acf(earthq_ts) #Pour earthq une faible autocorrelation positive est calculé pour les 5 premiers décalages puis elle diminue jusqu'à devenir négative mais pas suffisament significative.
+
+```
+
+
+```{r}
+## Identification de tendance à long terme
+# Tendance globale
+library(pastecs)
+# Test par bootstrap
+(earthq_ts_trend_test <- trend.test(earthq_ts, R = 999))
+#original = coeff corrélation, bias = asymétrie, erreur standard= ecart-type par rapport à la distribution normale => le plus important c'est le graphique.
+#original= -0.2 : correlation inverse négligeable. plus le temps passe plus les tremblements de terres faiblisent.
+
+plot(earthq_ts_trend_test)
+#droite pointillée aux extremes= p faible= p<alpha = on rejette Ho il y a donc une tendance générale.
+#qqplot: ronds noirs = observations suivent bien la droite pointillée, donc la distribution est normale.
+
+# Valeur p associée au test bootstrappé
+earthq_ts_trend_test$p.value
+# Valeur p associée au test bootstrappé : 0,045 < 0,05 -> tendance significative au seuil alpha de 5%
+```

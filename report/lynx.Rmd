@@ -1,0 +1,74 @@
+---
+title: "Lynx"
+output: html_notebook
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#??????????
+```
+
+
+### La population de lynx
+
+Une étude s'intéresse aux  lynx capturés entre 1821 et 1934 au Canada.
+
+> Jeu de données : lynx du package datasets
+
+```{r,fig.align='center', echo=FALSE, out.width= '55%'}
+knitr::include_graphics("images/lynx.jpg")
+```
+
+```{r}
+ datasets::lynx
+ SciViews::R
+
+#">  datasets::lynx
+#Time Series:
+#Start = 1821 
+#End = 1934 
+#Frequency = 1 ".
+ 
+class(lynx) 
+#"ts". On a déjà un objet ts, on pas besoin de le créer.
+
+unclass(lynx)
+#on voit un vecteur de nombre allant de 1 à 114.  avec comme attribut "attr(,"tsp")" et comme start end et fréquence "[1] 1821 1934    1".
+#1934-1821=113+1=114 ans OR 114 observations donc 1 par an.donc pas d'observations mensuelles pa:s besoin de la fonnction cycle.
+
+time(lynx) 
+#vecteur de temps allant de l'année 1821 à l'année 1934.
+
+acf(lynx)
+#autocorrelation de 1 à lag=0 (logique), autocorrelation positive et significative pour lag= 1 et lag=2. ensuit l'ACF devient negative et significative (inverse) pour lag= 3 4 5 6 7. puis elle redevient positive pour les 5 lags suivant et le cycle recommence (- pour 4 lags et + pour 6 lags...).
+
+plot(lynx) 
+#une variation cyclique des données peut etre observée. Pour mettre en évidence l'effet sur plusieurs années la fonction stat.slide peut etre uttilisée.
+
+##Statistiques glissantes
+library(pastecs) 
+#besoin de ce package, sinon meme l'aide en ligne n'est pas disponible. mais on peutr savoir de quel package on a besoin en mettant ?stat.slide.
+lynx.stat <- stat.slide(time(lynx), lynx, xmin = 1821, deltat = 10)
+lynx.stat
+plot(lynx.stat)
+#on voit une augmentation pour les periodes allant de 1821-1831, 1861-1871, 1901-1934. On peut dire qu'avec le temps le nombre de lynx capturés augmente.
+```
+
+```{r}
+## Identification de tendance à long terme
+# Tendance globale
+library(pastecs)
+# Test par bootstrap
+(lynx_trend_test <- trend.test(lynx, R = 999))
+#original = coeff correlation, bias = asymétrie, erreur standard= ecart-type par rapport à la distribution normale => le plus important c'est le graphique.
+#original= 0.089 : correlation direct négligeable.
+
+plot(lynx_trend_test)
+#droite pointillée au milieu de l'histogramme = p élevé = p > alpha = on ne rejette pas Ho il n'y a donc pas de tendance générale.
+#qqplot: ronds noirs = observations suivent bien la droite pointillée, donc la distribution est normale.
+
+# Valeur p associée au test bootstrappé
+lynx_trend_test$p.value
+# Valeur p associée au test bootstrappé : 0,32 > 0,05 -> pas tendance significative au seuil alpha de 5%
+```
