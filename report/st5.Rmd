@@ -1,0 +1,137 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+# Séries spatio-temporelles (cinquième partie)
+library(pastecs)
+
+## Régularisation de séries
+data(releve)  # série totalement irrégulière. ce jeu de donnée ce trouve ds pastecs, mesure quantitee d'algues dans le temps.
+names(releve) # variable phytoplancton  n:om des algues.
+head(releve)
+
+# Graphe d'une série
+library(tidyverse)
+releve %>% ggplot() + geom_line(mapping = aes(x = Day, y = Melosul))
+# ou
+#plot(releve$Day, releve$Melosul, type = "l")
+# A priori assez anarchique avec pas de temps irrégulier! il y a des blooms.
+
+# Etude des intervalle de temps
+releve$Day # jour des mesure
+# Quels sont les écart entre les observation?
+# -> différence entre les observations 2 à 2
+releve$Day[2:61] - releve$Day[1:60]
+
+# Calcul de l'écart moyen
+mean(releve$Day[2:61] - releve$Day[1:60]) #pas de temps moyen
+range(releve$Day[2:61] - releve$Day[1:60]) # min et max
+
+# Quel intervalle prendre?
+# Recherche de la meilleure grille régulière en utilisant regul.screen()
+regul.screen(releve$Day, xmin = 1:11, deltat = 16:27)
+#de 16 a 27 : ainsi on encadre le pas moyen =22. pour le debut entre 1 et 11.
+# xmin commence du jour 1 au jour 11 et deltat intervalle de 16 à 27 j
+# Trois valeur importantes: n, exact et match
+regul.adj(releve$Day, xmin = 8, deltat = 21)
+# Choix de la tolérance
+# Donne le nombre d'observation par rapport à la grille choisie
+
+#la fenetre de tolerence: nombre d'obs prises en compte autour de la valeur. 
+#nbr.match : nombre d obs qui vont coller entr serie de depart ey la serie regularise en tetant compte de la fenetre de olerence. celui ci est le tableau le plus important.
+#nbr.exact.match : tiens pas compte de la fenetre de tolerence. 
+#la valeur plus importante est celle de d=21.
+# en ccl vaut mieux commence a x=8 et on aura 29 obs qui collent dans la fenetre et 4 qui vont coller exactement.
+# jusqu'ici on a fait le necessaire pour choisir le pas de temps. mnt on doit choisir quelle methode utiliser.
+
+
+
+
+# Régularisation par valeur constante
+#xmin = 8 , deltat 21 , n = 63
+relreg <- regul(releve$Day, releve$Melosul,
+  xmin = 8, deltat = 21, tol = 3.1, n = 63,
+  methods = "c")
+relreg
+plot(relreg)
+#releve$Day on choisi de travailler sur les dates, releve$Melosul on choisi le jeu de données. tol = 3.1 fenetre de tolerence de trois jour en prenant aussi la valeur a la 3ieme jour (0.1).
+#graphique pour diagnostiquer. en noir serie initiale. pointilee verticales en noir pour debut et fin. rouge serie regularisee. croix=obs regularisee. croix avec ronds =obs pas regularisee. la ou la densite d obs est plus importante on loupe des pics ou on les decale dans le temps. pour miinmiser cela on utilise d autres techniques.
+
+
+# Régularisation par valeur linéaire
+relreg <- regul(releve$Day, releve$Melosul,
+  xmin = 8, deltat = 21, tol = 3.1, n = 63,
+  methods = "l")
+relreg
+plot(relreg)
+# on a juste change la methode c---->l .
+# graphe pas de prolongation du picsMAIS  on a loupe la valeur maximum.
+
+
+
+# Régularisation par courbes splines
+relreg <- regul(releve$Day, releve$Melosul,
+  xmin = 8, deltat = 21, tol = 3.1, n = 63,
+  methods = "s")
+relreg
+plot(relreg
+#methode=s. Attention on peut artificiellement creer ds pics et des creux importants!! exemples: pour un creux on pedit des valeurs neagtives (or nombres d'algues--->génant).
+
+
+# Régularisation par la méthode des aires
+relreg <- regul(releve$Day, releve$Melosul,
+  xmin = 8, deltat = 21, tol = 3.1, n = 63,
+  methods = "a")
+relreg
+plot(relreg)
+#il y a moins de pics tronquées. les pics sont representees differements les uns des autres.
+
+
+# Transformation de relreg en série temporelle : à la fin on a un objet regule pas a utiliser comme objet ts faut utiliser tseries pour l extraire.
+
+rel.ts <- tseries(relreg)
+plot(rel.ts) # graphe de la série temporelle
+class(rel.ts)
+acf(rel.ts)  # possible car série régulière
+
+
+
+
+
+
+
+
+## Prédiction (démonstration) : pour des données boursières.
+# Il faut installer le package R prophet
+#install.packages("prophet")
+library(prophet)
+library(DAAG)
+data(SP500close)
+?SP500close
+plot(SP500close, type = "l")
+
+# Il faut un data frame avec ds (la date) et y (le signal) pour prophet
+SP500 <- data.frame(ds = as.Date("1990-01-01") + 0:(length(SP500close) - 1),
+                     y = SP500close)
+plot(SP500, type = "l")
+
+# Analyse
+SP500.pred <- prophet(SP500)
+# Décider des valeurs futures à prédire (1 an)
+future <- make_future_dataframe(SP500.pred, periods = 365)
+tail(future)
+# Effectuer la prédiction
+forecast <- predict(SP500.pred, future)
+tail(forecast) # Beaucoup d'information!
+plot(SP500.pred, forecast)
+# Examiner les composantes
+prophet_plot_components(SP500.pred, forecast)
+# On constate que la méthode prend en compte à la fois une tendance à long terme
+# une variation siasonnière,
+# mais aussi une variation en fonction du jour de la semaine!
+
+
+```
+
