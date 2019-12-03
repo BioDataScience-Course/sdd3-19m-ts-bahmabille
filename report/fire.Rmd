@@ -82,8 +82,10 @@ plot(fire_trend_test)
 # Valeur p associée au test bootstrappé
 fire_trend_test$p.value
 # Valeur p associée au test bootstrappé : 0,73 > 0,05 -> pas de tendance non significative au seuil alpha de 5%.
- 
- 
+```
+
+
+```{r}
 ## Etude de la tendance locale
 # Utilisation des sommes cumulées avec local.trend()
 fire.lt <- local.trend(fire_ts)
@@ -98,8 +100,12 @@ identify(fire.lt)
 
 
 #(((aggrégation des données, on indique 1 car l'unite de temps dans cette serie est de 1.
-(fire2 <- aggregate(fire_ts, 1/10, mean))
-#1 correspond à la fréquence de la time série, tu es obligée de mettre une valeur décimale: ex:1/5= un pas de temps correspond à 5 observations. Dans ce cas-ci il n'est pas pertinent d'utiliser la fonction aggregate car elle permet d'aggréger (écraser) les données pour un cycle et ainsi obtenir un aperçu sur les tendances locales pour plusieurs cycles. Dons quand il n'y a pas de cycles, il ne faut pas utiliser aggregate.
+(fire2 <- aggregate(fire_ts, 1/8, mean))
+#1 correspond à la fréquence de la time série, tu es obligée de mettre une valeur décimale: ex:1/8= un pas de temps correspond à 8 observations. 
+#aggregate sert à aggréger les données sur un interval de temps donné c'est à dire qu'il va diviser le jeux de donnée en sous ensemble (dont le nombre dépend de l'interval de temps choisi pour aggréger les données au plus l'interval est grand au moins il y a de sous ensemble) et calcul les statistiques sur ces sous ensemble afin de retourner le courbe noire que l'on peut voir sur le graphe 2, sur le graphe 3 on voit le courbe des sommes cumulées en rouge et la courbe retournée par aggregate.
+#La console nous donne : $pos [1]  1 3 5 6 7 8 (position de points selectionnés, 6 en tout). $trends [1] 2420125 1424250 2432750 1930750 3780125 (pente des 5 segments). $k [1] 2366922 (moyenne générale).
+#on voit des pentes superieures à celle de la moyenne générale jusqu'au temps 30 puis elle sont inferieures.
+#localement les valeurs ont tendance à etre plus ou moins elevees que la moyenne global.
 fire.lt2 <- local.trend(fire2)
 identify(fire.lt2) # Cliquer les points voulus, puis indiquer "finish"...
 #)))
@@ -113,3 +119,5 @@ spectrum(fire_ts)
 spectrum(fire_ts, spans = c(3, 5))
 # Permet de mieux mettre en évidence les pics significatifs. ici on voit 3 pics significatifs et donc trois cycles significatifs.
 ```
+
+

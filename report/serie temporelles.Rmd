@@ -50,7 +50,7 @@ cernes <- read_csv("../data/cernes.txt")
 class(cernes) 
 #[1] "spec_tbl_df" "tbl_df"      "tbl"         "data.frame" 
 
-cernes_ts <- ts(cernes, start = 1.000, frequency = 1) 
+cernes_ts <- ts(cernes$Cernes, start = 1.000, frequency = 1) 
 cernes_ts
 
 time(cernes_ts) 
@@ -82,8 +82,29 @@ cernes_trend_test$p.value
 ```
 
 
-### Variation de la température 
+```{r}
+## Etude de la tendance locale
+# Utilisation des sommes cumulées avec local.trend()
+cernes.lt <- local.trend(cernes_ts)
 
+#aggrégation des données, on indique 1 car l'unite de temps dans cette serie est de 1.
+(cernes2 <- aggregate(cernes_ts, 1/40, mean))
+cernes.lt2 <- local.trend(cernes2)
+identify(cernes.lt2) 
+#La console nous donne : $pos [1]  2  3  4  6  9 12 14 17 20 22 23 (position de points selectionnés). $trends [1]  1.0701000 0.8763750 0.9890750 1.0882667 1.0044750 0.9029625 1.0469667 0.9461250 1.0495375 0.8553250 (pente des segments). $k [1] 0.9866957 (moyenne générale).
+
+
+## Analyse spectrale : détecte des cycles plus subtils et même des cycles qui se surperposent. qlq soit le signal on peut le représenter par un ensemble de sinus et de cos de periode croissante avec une valeur d'amplitude adéquate à chaque signal. si amplitude des différentes composantes est faible alors signal faible et inversément.
+## ## La fréquence est représentée en abscisse et les spectres en ordonnée. Il y a un cycle si un des spectres d’une fréquence différente de zéro se trouve dans la l’intervalle de confiance représenté en haut à droite en bleu.
+spectrum(cernes_ts) 
+# Technique très puissante, mais signal brut bruité => lissage nécessaire!
+# L'argument 'spans' affectue ce lissage, il n'y a pas de règle stictes, il faut juste deux nombres impairs.
+spectrum(cernes_ts, spans = c(7, 9))
+# Permet de mieux mettre en évidence les pics significatifs. ici il n'y a pas de pics significatifs : tous les pics sont endessous de l'intervalle de confiance.
+```
+
+
+### Variation de la température 
 Les chercheurs rencensent la température moyenne mensuelle à Melbourne à partir de janvier 1981. Y a t'il une augmentation de la température au cours du temps ? 
 
 > Jeu de données : temperature_melbourne_1981
@@ -136,6 +157,27 @@ temp_trend_test$p.value
 # Valeur p associée au test bootstrappé : 0.767 > 0,05 -> pas tendance significative au seuil alpha de 5%
 ```
 
+```{r}
+## Etude de la tendance locale
+# Utilisation des sommes cumulées avec local.trend()
+temp.lt <- local.trend(temp_ts)
+#les cycles perturbent l'analyse on utilise donc aggregate pour contrer cela.
+(temp2 <- aggregate(temp_ts, 1, mean))
+
+temp.lt2 <- local.trend(temp2)
+identify(temp.lt2) 
+# #La console nous donne : $pos [1]  1  2  3  4  5  7  8  9 10 (position de points selectionnés). $trends [1] 10.80808 11.21565 10.61205 11.15383 10.84979 11.98291 11.29086 11.68987 (pente des segments). $k [1] 11.2008 (moyenne générale).
+
+
+## Analyse spectrale : détecte des cycles plus subtils et même des cycles qui se surperposent. qlq soit le signal on peut le représenter par un ensemble de sinus et de cos de periode croissante avec une valeur d'amplitude adéquate à chaque signal. si amplitude des différentes composantes est faible alors signal faible et inversément.
+## ## La fréquence est représentée en abscisse et les spectres en ordonnée. Il y a un cycle si un des spectres d’une fréquence différente de zéro se trouve dans la l’intervalle de confiance représenté en haut à droite en bleu.
+spectrum(temp_ts) 
+# Technique très puissante, mais signal brut bruité => lissage nécessaire!
+# L'argument 'spans' affectue ce lissage, il n'y a pas de règle stictes, il faut juste deux nombres impairs.
+spectrum(temp_ts, spans = c(3, 5))
+# Permet de mieux mettre en évidence les pics significatifs. ici il y a un pic significatif : a la frequence 1.
+```
+
 ### Transect de Nice à Calvi
 
 Les chercheurs souhaitent visualiser graphiquement la distribution des Copépodes le long du transect (Variable Copepodits1).
@@ -184,6 +226,28 @@ plot(marbio_trend_test)
 marbio_trend_test$p.value
 # Valeur p associée au test bootstrappé : 0 < 0,05 -> tendance significative au seuil alpha de 5%
 ```
+
+```{r}
+## Etude de la tendance locale
+# Utilisation des sommes cumulées avec local.trend()
+marbio.lt <- local.trend(marbio_ts)
+#en pointillé on voit la série initiale. la courbe rouge (=sommes cumulées) chaque segment de la ligne brisée représente une tendance locale : une période où la moyenne ne varie pas: la valeur de cette moyenne est donnée par la pente du segment additionnée de r (=moyenne de toute la série).Par rapport à la moyenne globale des observations, soit on est au-dessus ou en-dessous.
+
+identify(marbio.lt)
+# ATTENTION: identify() ne peut PAS être utilisée dans un R Markdown ou Notebook. Cette fonction doit être utilisée seulement dans le fenêtre CONSOLE de R!!!
+#Selectionner cette ligne de code avec la précédente avec d'executer (Ctrl+Enter). Cliquer les points voulus (dans ce graphe-ci un point au début, un au milieu qd est T° très basses et un point à la fin), puis indiquer "finish"...
+#La console nous donne : $pos [1]  1 32 40 47 51 60 62 (position de points selectionnés). $trends [1] 35.03226 263.50000 119.71429 294.00000 106.77778 352.00000 (pente des segments). $k [1] 112.8676 (moyenne générale).
+
+
+## Analyse spectrale : détecte des cycles plus subtils et même des cycles qui se surperposent. qlq soit le signal on peut le représenter par un ensemble de sinus et de cos de periode croissante avec une valeur d'amplitude adéquate à chaque signal. si amplitude des différentes composantes est faible alors signal faible et inversément.
+## ## La fréquence est représentée en abscisse et les spectres en ordonnée. Il y a un cycle si un des spectres d’une fréquence différente de zéro se trouve dans la l’intervalle de confiance représenté en haut à droite en bleu.
+spectrum(marbio_ts) 
+# Technique très puissante, mais signal brut bruité => lissage nécessaire!
+# L'argument 'spans' affectue ce lissage, il n'y a pas de règle stictes, il faut juste deux nombres impairs.
+spectrum(marbio_ts, spans = c(3, 5))
+# Permet de mieux mettre en évidence les pics significatifs. ici il y a un pic significatif : a la frequence 0.2.
+```
+
 
 > Jeu de données : Marbio du package (Pastecs)
 
@@ -243,6 +307,27 @@ milK_trend_test$p.value
 # Valeur p associée au test bootstrappé : 0 < 0,05 ->  tendance significative au seuil alpha de 5%
 ```
 
+
+```{r}
+## Etude de la tendance locale
+# Utilisation des sommes cumulées avec local.trend()
+milK.lt <- local.trend(milK_ts)
+#en pointillé on voit la série initiale. la courbe rouge (=sommes cumulées) chaque segment de la ligne brisée représente une tendance locale : une période où la moyenne ne varie pas: la valeur de cette moyenne est donnée par la pente du segment additionnée de r (=moyenne de toute la série).Par rapport à la moyenne globale des observations, soit on est au-dessus ou en-dessous. Au debut les variations sont bruitées, on utilise donc aggregate pour contrer cela. 
+
+identify(milK.lt)
+#La console nous donne : $pos [1] 1  73 155 (position de points selectionne). $trends [1] 671.8389 813.4610 (pente des segments). $k [1] 746.4917 (moyenne générale).
+
+
+## Analyse spectrale : détecte des cycles plus subtils et même des cycles qui se surperposent. qlq soit le signal on peut le représenter par un ensemble de sinus et de cos de periode croissante avec une valeur d'amplitude adéquate à chaque signal. si amplitude des différentes composantes est faible alors signal faible et inversément.
+## ## La fréquence est représentée en abscisse et les spectres en ordonnée. Il y a un cycle si un des spectres d’une fréquence différente de zéro se trouve dans la l’intervalle de confiance représenté en haut à droite en bleu.
+spectrum(milK_ts) 
+# Technique très puissante, mais signal brut bruité => lissage nécessaire!
+# L'argument 'spans' affectue ce lissage, il n'y a pas de règle stictes, il faut juste deux nombres impairs.
+spectrum(milK_ts, spans = c(3, 5))
+# Permet de mieux mettre en évidence les pics significatifs. ici il y a un pic significatif : a la frequence 1.
+```
+
+
 > Jeu de données : milk_product_1962
 
 ### Variation de la population en Australie
@@ -262,7 +347,7 @@ demographie <- read_csv("../data/demographie.txt")
 
 class(demographie) 
 
-demo_ts <- ts(demographie, start = 1978, frequency = 12) 
+demo_ts <- ts(demographie$population, start = 1978, frequency = 12) 
 demo_ts
 
 time(demo_ts) 
@@ -295,3 +380,26 @@ plot(demo_trend_test)
 demo_trend_test$p.value
 # Valeur p associée au test bootstrappé : 0 < 0,05 -> tendance significative au seuil alpha de 5%
 ```
+
+```{r}
+## Etude de la tendance locale
+# Utilisation des sommes cumulées avec local.trend()
+demo.lt <- local.trend(demo_ts)
+#en pointillé on voit la série initiale. la courbe rouge (=sommes cumulées) chaque segment de la ligne brisée représente une tendance locale : une période où la moyenne ne varie pas: la valeur de cette moyenne est donnée par la pente du segment additionnée de r (=moyenne de toute la série).Par rapport à la moyenne globale des observations, soit on est au-dessus ou en-dessous.
+
+identify(demo.lt)
+# ATTENTION: identify() ne peut PAS être utilisée dans un R Markdown ou Notebook. Cette fonction doit être utilisée seulement dans le fenêtre CONSOLE de R!!!
+#Selectionner cette ligne de code avec la précédente avec d'executer (Ctrl+Enter). Cliquer les points voulus (dans ce graphe-ci un point au début, un au milieu qd est T° très basses et un point à la fin), puis indiquer "finish"...
+#La console nous donne : $pos [1] 1 86 158 (position de points selectionnés). $trends [1] 11195.76 12708.81 (pente des segments). $k [1] 11890.66 (moyenne générale).
+
+
+## Analyse spectrale : détecte des cycles plus subtils et même des cycles qui se surperposent. qlq soit le signal on peut le représenter par un ensemble de sinus et de cos de periode croissante avec une valeur d'amplitude adéquate à chaque signal. si amplitude des différentes composantes est faible alors signal faible et inversément.
+## ## La fréquence est représentée en abscisse et les spectres en ordonnée. Il y a un cycle si un des spectres d’une fréquence différente de zéro se trouve dans la l’intervalle de confiance représenté en haut à droite en bleu.
+spectrum(demo_ts) 
+# Technique très puissante, mais signal brut bruité => lissage nécessaire!
+# L'argument 'spans' affectue ce lissage, il n'y a pas de règle stictes, il faut juste deux nombres impairs.
+spectrum(demo_ts, spans = c(3, 5))
+# Permet de mieux mettre en évidence les pics significatifs. ici il n'y a pas de pics significatifs : tous les pics sont endessous de l'intervalle de confiance.
+```
+
+

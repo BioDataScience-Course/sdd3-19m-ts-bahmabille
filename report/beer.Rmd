@@ -63,7 +63,9 @@ plot(beer_trend_test)
 # Valeur p associée au test bootstrappé
 beer_trend_test$p.value
 # Valeur p associée au test bootstrappé : 0 < 0,05 -> tendance significative au seuil alpha de 5%
- 
+```
+
+```{r}
 ## Etude de la tendance locale
 # Utilisation des sommes cumulées avec local.trend()
 beer.lt <- local.trend(beer_ts)
@@ -72,17 +74,9 @@ beer.lt <- local.trend(beer_ts)
 identify(beer.lt)
 # ATTENTION: identify() ne peut PAS être utilisée dans un R Markdown ou Notebook. Cette fonction doit être utilisée seulement dans le fenêtre CONSOLE de R!!!
 #Selectionner cette ligne de code avec la précédente avec d'executer (Ctrl+Enter). Cliquer les points voulus (dans ce graphe-ci un point au début, un au milieu qd est T° très basses et un point à la fin), puis indiquer "finish"...
-#La console nous donne : $pos [1]  6 24 60 69 (position de points selectionnés, 4 en tout). $trends [1] 2334611 1775861 3538333 (pente des 3 segments). $k [1] 2320086 (moyenne générale).
-#on voit des pentes superieures à celle de la moyenne générale jusqu'au temps 30 puis elle sont inferieures.
-#localement les valeurs ont tendance à etre plus ou moins elevees que la moyenne global.
-
-
-#(((aggrégation des données, on indique 1 car l'unite de temps dans cette serie est de 1.
-(beer2 <- aggregate(beer_ts, 1/3, mean))
-#1 correspond à la fréquence de la time série, tu es obligée de mettre une valeur décimale: ex:1/5= un pas de temps correspond à 5 observations. Dans ce cas-ci il n'est pas pertinent d'utiliser la fonction aggregate car elle permet d'aggréger (écraser) les données pour un cycle et ainsi obtenir un aperçu sur les tendances locales pour plusieurs cycles. Dons quand il n'y a pas de cycles, il ne faut pas utiliser aggregate.
-beer.lt2 <- local.trend(beer2)
-identify(fire.lt2) # Cliquer les points voulus, puis indiquer "finish"...
-#)))
+#La console nous donne : $pos [1]  2 182 471 (position de points selectionnés, 3 en tout). $trends [1] 103.7833 157.0035 (pente des 2 segments). $k [1] 136.3954 (moyenne générale).
+#localement les valeurs ont tendance à etre moins elevees que la moyenne global.
+#aggregation inutile dans ce cas ci car tendances locales sont deja bien amplifiee pas la ligne rouge.
 
 
 ## Analyse spectrale : détecte des cycles plus subtils et même des cycles qui se surperposent. qlq soit le signal on peut le représenter par un ensemble de sinus et de cos de periode croissante avec une valeur d'amplitude adéquate à chaque signal. si amplitude des différentes composantes est faible alors signal faible et inversément.
@@ -93,3 +87,5 @@ spectrum(beer_ts)
 spectrum(beer_ts, spans = c(5, 7))
 # Permet de mieux mettre en évidence les pics significatifs. ici on voit 1 pic significatif et donc 1 cycle significatif a la frequence 1.
 ```
+
+
