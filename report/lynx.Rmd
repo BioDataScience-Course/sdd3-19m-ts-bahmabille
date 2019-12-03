@@ -70,5 +70,36 @@ plot(lynx_trend_test)
 
 # Valeur p associée au test bootstrappé
 lynx_trend_test$p.value
-# Valeur p associée au test bootstrappé : 0,32 > 0,05 -> pas tendance significative au seuil alpha de 5%
+# Valeur p associée au test bootstrappé : 0,32 > 0,05 -> pas tendance significative au seuil alpha de 5%.
+ 
+
+
+## Etude de la tendance locale
+# Utilisation des sommes cumulées avec local.trend()
+lynx.lt <- local.trend(lynx)
+#en pointillé on voit la série initiale. la courbe rouge (=sommes cumulées) chaque segment de la ligne brisée représente une tendance locale : une période où la moyenne ne varie pas: la valeur de cette moyenne est donnée par la pente du segment additionnée de r (=moyenne de toute la série).Par rapport à la moyenne globale des observations, soit on est au-dessus ou en-dessous. 
+
+identify(lynx.lt)
+# ATTENTION: identify() ne peut PAS être utilisée dans un R Markdown ou Notebook. Cette fonction doit être utilisée seulement dans le fenêtre CONSOLE de R!!!
+#Selectionner cette ligne de code avec la précédente avec d'executer (Ctrl+Enter). Cliquer les points voulus (dans ce graphe-ci un point au début, un au milieu qd est T° très basses et un point à la fin), puis indiquer "finish"...
+#La console nous donne : $pos [1]  6 24 60 69 (position de points selectionnés, 4 en tout). $trends [1] 2334611 1775861 3538333 (pente des 3 segments). $k [1] 2320086 (moyenne générale).
+#on voit des pentes superieures à celle de la moyenne générale jusqu'au temps 30 puis elle sont inferieures.
+#localement les valeurs ont tendance à etre plus ou moins elevees que la moyenne global.
+
+
+#(((aggrégation des données, on indique 1 car l'unite de temps dans cette serie est de 1.
+(lynx2 <- aggregate(lynx, 1/10, mean))
+#1 correspond à la fréquence de la time série, tu es obligée de mettre une valeur décimale: ex:1/5= un pas de temps correspond à 5 observations. Dans ce cas-ci il n'est pas pertinent d'utiliser la fonction aggregate car elle permet d'aggréger (écraser) les données pour un cycle et ainsi obtenir un aperçu sur les tendances locales pour plusieurs cycles. Dons quand il n'y a pas de cycles, il ne faut pas utiliser aggregate.
+lynx.lt2 <- local.trend(lynx2)
+identify(fire.lt2) # Cliquer les points voulus, puis indiquer "finish"...
+#)))
+
+
+## Analyse spectrale : détecte des cycles plus subtils et même des cycles qui se surperposent. qlq soit le signal on peut le représenter par un ensemble de sinus et de cos de periode croissante avec une valeur d'amplitude adéquate à chaque signal. si amplitude des différentes composantes est faible alors signal faible et inversément.
+## La fréquence est représentée en abscisse et les spectres en ordonnée. Il y a un cycle si un des spectres d’une fréquence différente de zéro se trouve dans la l’intervalle de confiance représenté en haut à droite en bleu. 
+spectrum(lynx) 
+# Technique très puissante, mais signal brut bruité => lissage nécessaire!
+# L'argument 'spans' affectue ce lissage, il n'y a pas de règle stictes, il faut juste deux nombres impairs.
+spectrum(lynx, spans = c(3, 5))
+# Permet de mieux mettre en évidence les pics significatifs. ici on voit 1 pic significatif et donc 1 cycle significatif a la frequence 0.1.
 ```
