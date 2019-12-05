@@ -131,3 +131,4 @@ spectrum(co2.loess.ts[, 3], span = c(3, 7)) # Tout n'est pas éliminé
 #si dans analyse spectral il reste bcp de zones significatives alors l'analyse n a pas bien marché. idealement ACF non significatif. Lissage bie fait: pas de pics non expliqués.
 ```
 
+
