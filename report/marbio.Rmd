@@ -1,0 +1,126 @@
+---
+title: "Marbio"
+output: html_notebook
+---
+### Transect de Nice à Calvi
+
+Les chercheurs souhaitent visualiser graphiquement la distribution des Copépodes le long du transect (Variable Copepodits1).
+
+> Jeu de données : Marbio du package (Pastecs)
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#??????????
+```
+
+```{r, echo= FALSE, message=FALSE, out.width= '50%', fig.align='center'}
+library(tidyverse)
+library(cowplot)
+fr <- map_data("france")
+ggplot(fr, aes(long, lat, group = group)) +
+  geom_polygon(fill= "white", color = "black") +
+  geom_segment(aes(y = 43.7 , x = 7.25, yend = 42.56, xend= 8.75, color = "red"), size = 1, show.legend = FALSE) +
+  theme(axis.line = element_blank(), axis.title = element_blank(),axis.text = element_blank(), axis.ticks = element_blank()) +
+  coord_quickmap()
+```
+
+```{r}
+library(readr)
+data(marbio)
+marbio
+
+class(marbio) 
+
+marbio_ts <- ts(marbio$Copepodits1, start = 1.000, frequency = 1) 
+marbio_ts
+
+time(marbio_ts) 
+
+plot(marbio_ts) 
+acf(marbio_ts)
+```
+
+
+```{r}
+## Identification de tendance à long terme
+# Tendance globale
+library(pastecs)
+# Test par bootstrap
+(marbio_trend_test <- trend.test(marbio_ts, R = 999))
+#original = coeff correlation, bias = asymétrie, erreur standard= ecart-type par rapport à la distribution normale => le plus important c'est le graphique.
+#original= 0.68 : correlation direct non négligeable.
+
+plot(marbio_trend_test)
+##droite pointillée aux extremes= p faible= p<alpha = on rejette Ho il y a donc une tendance générale.
+#qqplot: ronds noirs = observations suivent bien la droite pointillée, donc la distribution est normale.
+
+# Valeur p associée au test bootstrappé
+marbio_trend_test$p.value
+# Valeur p associée au test bootstrappé : 0 < 0,05 -> tendance significative au seuil alpha de 5%
+```
+
+```{r}
+## Etude de la tendance locale
+# Utilisation des sommes cumulées avec local.trend()
+marbio.lt <- local.trend(marbio_ts)
+#en pointillé on voit la série initiale. la courbe rouge (=sommes cumulées) chaque segment de la ligne brisée représente une tendance locale : une période où la moyenne ne varie pas: la valeur de cette moyenne est donnée par la pente du segment additionnée de r (=moyenne de toute la série).Par rapport à la moyenne globale des observations, soit on est au-dessus ou en-dessous.
+
+identify(marbio.lt)
+# ATTENTION: identify() ne peut PAS être utilisée dans un R Markdown ou Notebook. Cette fonction doit être utilisée seulement dans le fenêtre CONSOLE de R!!!
+#Selectionner cette ligne de code avec la précédente avec d'executer (Ctrl+Enter). Cliquer les points voulus (dans ce graphe-ci un point au début, un au milieu qd est T° très basses et un point à la fin), puis indiquer "finish"...
+#La console nous donne : $pos [1]  1 32 40 47 51 60 62 (position de points selectionnés). $trends [1] 35.03226 263.50000 119.71429 294.00000 106.77778 352.00000 (pente des segments). $k [1] 112.8676 (moyenne générale).
+
+
+## Analyse spectrale : détecte des cycles plus subtils et même des cycles qui se surperposent. qlq soit le signal on peut le représenter par un ensemble de sinus et de cos de periode croissante avec une valeur d'amplitude adéquate à chaque signal. si amplitude des différentes composantes est faible alors signal faible et inversément.
+## ## La fréquence est représentée en abscisse et les spectres en ordonnée. Il y a un cycle si un des spectres d’une fréquence différente de zéro se trouve dans la l’intervalle de confiance représenté en haut à droite en bleu.
+spectrum(marbio_ts) 
+# Technique très puissante, mais signal brut bruité => lissage nécessaire!
+# L'argument 'spans' affectue ce lissage, il n'y a pas de règle stictes, il faut juste deux nombres impairs.
+spectrum(marbio_ts, spans = c(3, 5))
+# Permet de mieux mettre en évidence les pics significatifs. ici il y a un pic significatif : a la frequence 0.2.
+```
+
+```{r}
+library(pastecs)
+## Décomposition par médianes mobiles
+marbio.dec <- decmedian(marbio_ts, order = 2, times = 5, ends = "fill")
+#choix de l'ordre et de times, essayer plusieurs valeurs, éviter valeur trop importantes pour pas trop lisser la serie mais suffisant pour avoir une difference par rapport a la série initiale. end=par defaut.
+#analyse peu efficace : palliers peu définis.
+plot(marbio.dec, col = c(1,4,2), xlab = "stations")
+#serie initiale en noir. en bleu il y a des palliers: significatif? tester ici bas
+#c(1,4,2) correspondent aux couleurs noir, bleu et rouge dans R. 
+#plusieurs pallier sont visibles
+plot(marbio.dec, col = 1:2, stack = FALSE, resid = FALSE)
+# Autre façon de représenter les résultats, en superposant les courbes pour eviter erreurs d'echelles entres les trois graphiques. stack=superposer.
+
+#Analyse
+marbio.dec.ts <- tseries(marbio.dec)
+# Extraire série de schizo diff
+plot(marbio.dec.ts)
+# Transforme toute les composante
+#calcul de deux séries: filtrée et résidus
+spectrum(marbio.dec.ts[, 1])
+# Spectre de la première série (la série filtrée). 
+```
+
+```{r}
+## Méthode des différences pour enlever l'effet de la tendance generale: TESTER PLUSIEURS DECALAGES.
+(marbio.dif1 <- tsd(marbio_ts, lag = 3, order = 3, method = "diff"))
+plot(marbio.dif1, col = 1:3)
+#on peut voir que la tendance generale a ete enleve de la serie filtree, en effet, la signal ne tend pas a diminuer, il suit une droite horizontale. Par contre dans les residus ont peut voir que le signal est moins intense quand le temps augmente.
+
+#OU
+(marbio.dif <- tsd(marbio_ts, lag = 1, order = 3, method = "diff"))
+plot(marbio.dif, col = 1:3)
+
+#Analyse
+marbio.dif.ts <- tseries(marbio.dif)
+# Extraire série de schizo diff : pour verifier qd on extrait la tendance qu'on la bien extraite. si on extrait les residus c'est pour voir s'il ne reste plus de tendance.
+plot(marbio.dif.ts)
+# Transforme toute les composante
+#calcul de deux séries: filtrée et résidus
+spectrum(marbio.dif.ts[, 1])
+# Spectre de la première série (la série filtrée)
+```
+
+

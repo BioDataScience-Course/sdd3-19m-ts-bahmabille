@@ -20,7 +20,7 @@ library(pastecs)
 # fonction tsd()
 ?tsd
 
-# Lissage par moyennes mobiles
+# Lissage par moyennes mobiles pour éliminer les cycles.
 ?decaverage
 #objet=ts ou rts si on utilise pas R mais S+, type, order et parfois times. pour le reste laisser les valeurs par defaut.
 #

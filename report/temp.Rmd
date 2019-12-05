@@ -1,0 +1,189 @@
+---
+title: "Temperature melbourne 1981"
+output: html_notebook
+---
+
+### Variation de la température 
+Les chercheurs rencensent la température moyenne mensuelle à Melbourne à partir de janvier 1981. Y a t'il une augmentation de la température au cours du temps ? 
+
+> Jeu de données : temperature_melbourne_1981
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#??????????
+```
+
+
+```{r,fig.align='center', echo=FALSE, out.width= '65%'}
+knitr::include_graphics("images/temperature.jpg")
+```
+
+```{r}
+library(readr)
+temperature_melbourne_1981 <- read_csv("../data/temperature_melbourne_1981.csv")
+#View(temperature_melbourne_1981)
+
+class(temperature_melbourne_1981) 
+
+temp_ts <- ts(temperature_melbourne_1981$temp_mean, start = 1981, frequency = 12) 
+temp_ts
+
+time(temp_ts) 
+plot(temp_ts) 
+acf(temp_ts)
+
+cycle(temp_ts)
+split(temp_ts, cycle(temp_ts))
+boxplot(split(temp_ts, cycle(temp_ts)))
+
+notma.stat <- stat.slide(time(temp_ts), temp_ts, xmin = 1981, deltat = 3)
+notma.stat
+
+plot(notma.stat) 
+
+```
+
+
+```{r}
+## Identification de tendance à long terme
+# Tendance globale
+library(pastecs)
+# Test par bootstrap
+(temp_trend_test <- trend.test(temp_ts, R = 999))
+#original = coeff correlation, bias = asymétrie, erreur standard= ecart-type par rapport à la distribution normale => le plus important c'est le graphique.
+#original= 0.026 : correlation direct négligeable.
+
+plot(temp_trend_test)
+#droite pointillée au milieu de l'histogramme = p élevé = p > alpha = on ne rejette pas Ho il n'y a donc pas de tendance générale.
+#qqplot: ronds noirs = observations suivent bien la droite pointillée, donc la distribution est normale.
+
+# Valeur p associée au test bootstrappé
+temp_trend_test$p.value
+# Valeur p associée au test bootstrappé : 0.767 > 0,05 -> pas tendance significative au seuil alpha de 5%
+```
+
+```{r}
+## Etude de la tendance locale
+# Utilisation des sommes cumulées avec local.trend()
+temp.lt <- local.trend(temp_ts)
+#les cycles perturbent l'analyse on utilise donc aggregate pour contrer cela.
+(temp2 <- aggregate(temp_ts, 1, mean))
+
+temp.lt2 <- local.trend(temp2)
+identify(temp.lt2) 
+# #La console nous donne : $pos [1]  1  2  3  4  5  7  8  9 10 (position de points selectionnés). $trends [1] 10.80808 11.21565 10.61205 11.15383 10.84979 11.98291 11.29086 11.68987 (pente des segments). $k [1] 11.2008 (moyenne générale).
+
+
+## Analyse spectrale : détecte des cycles plus subtils et même des cycles qui se surperposent. qlq soit le signal on peut le représenter par un ensemble de sinus et de cos de periode croissante avec une valeur d'amplitude adéquate à chaque signal. si amplitude des différentes composantes est faible alors signal faible et inversément.
+## ## La fréquence est représentée en abscisse et les spectres en ordonnée. Il y a un cycle si un des spectres d’une fréquence différente de zéro se trouve dans la l’intervalle de confiance représenté en haut à droite en bleu.
+spectrum(temp_ts) 
+# Technique très puissante, mais signal brut bruité => lissage nécessaire!
+# L'argument 'spans' affectue ce lissage, il n'y a pas de règle stictes, il faut juste deux nombres impairs.
+spectrum(temp_ts, spans = c(3, 5))
+# Permet de mieux mettre en évidence les pics significatifs. ici il y a un pic significatif : a la frequence 1.
+```
+
+
+
+```{r}
+library(pastecs)
+#Moyennes mobiles: but = éliminer les cycles: 
+temp.avg <- tsd(temp_ts, method = "average", type = "additive",
+  order = 5, times = 5)
+
+temp.avg
+plot(temp.avg, col = 1:3)
+#premier graphique=serie initiale. deuxieme graphique= signal lissé, troisieme=residus. nous voyons que le signal est bien lissée (courbe rouge), nous nous sommes libérés des fluctuations non significatifs pour l'analyse de la tendace générale.
+plot(temp.avg, col = 1:2, stack = FALSE, resid = FALSE)
+# Autre façon de représenter les résultats, en superposant les courbes pour eviter erreurs d'echelles entres les trois graphiques. stack=superposer.
+
+
+# Analyse du filtrage
+temp.avg.filtered <- extract(temp.avg, components = "filtered")
+#extract permet d'extraire une seule composante à la fois. Extract permet d'extraire une série temporelle meme à partir d'un objet tsd (non ts).
+is.ts(temp.avg.filtered) # Oui: la Console nous indique TRUE, cela signifie qu'il s'agit d'une série temporelle.
+is.mts(temp.avg.filtered) # Non: la Console nous indique FALSE, cela signifie qu'il ne s'agit pas d'une série temporelle multiple.
+plot(temp.avg.filtered)
+#nous voyons ici la série lissé (sans fluctuations ponctuelles...résidus).
+acf(temp.avg.filtered) # Lag est le décalée ce qui a permit de calculer s'il y a autocorrelation ou pas. Pour le premier point decalage nul=serie comparé à elle meme donc acf=1. autocorrelation directe et significative presente.
+spectrum(temp.avg.filtered, span = c(3, 5)) 
+#pour verifier qd on extrait le cycle qu'on l'a bien extrait.effectivement il n'y a pas de cycles significatifs dans la serie filtree.
+(temp.avg.trend <- trend.test(temp.avg.filtered, R = 999)) 
+#Recherche de la tendance générale dans la série filtrée. par bootstraps, entreparanthese pour directement imprime le resultat.
+plot(temp.avg.trend)
+#histogramme: barre verticale a l'extreme: p<alpha: on rejette Ho: il y a tendance generale. donc la tendance generale a bien ete extraite.
+#qqplot: distribution est bien normale, les observations se repartissent bien sur la droite en pointillée. exception faite des premiers et des derniers.
+#barre verticale à l'extreme gauche= tendance générale très significative: tout aussi visible que avant la filtration dans ce cas-ci.
+temp.avg.trend$p.value # p=0 : Tendance significative : compare with same test before filtration: avec la decomposition, elimination des cycles, on voit la tendance a longterme, ici elle était déjà visible avant la décomposition.
+
+#ET
+
+# Analyse des résidus
+temp.avg.resid <- extract(temp.avg, components = "residuals")
+is.ts(temp.avg.resid) # Oui
+is.mts(temp.avg.resid) # Non
+plot(temp.avg.resid)
+#aucune tendance générale n'est visible ici :OK.
+acf(temp.avg.resid) 
+#aucune correlation entre les observation quand on extrait seulement les résidus.
+spectrum(temp.avg.resid, span = c(3, 5)) 
+#si on extrait les residus c'est pour voir s'il ne reste plus de tendance. c'est bien le cas ici.
+#on au cycle si la courbe monte jusqu'au traits bleus (vertical et horizontal qui se croisent) et puis il redescend. Ici on voit des cycles mais quand on interprète en biologie, on se rend compte que un cycle tous les 10 jours, 5 jours...: aucun sens : non sens.
+(temp.avg.resid.trend <- trend.test(temp.avg.resid, R = 999))
+plot(temp.avg.resid.trend)
+#barre verticala au milieu de l'histogramme=pas de tendance
+#qqplot=la distribution des résidus est bien normale.
+temp.avg.resid.trend$p.value 
+# Absoluement pas de tendance générale car p=0.2>alpha=0.05.
+```
+
+
+```{r}
+## Décomposition sinusoidale des températures et du CO2 : grace a la regression (lm)
+Time_temp <- time(temp_ts)
+tser.sin <- lm(temp_ts ~ I(cos(2*pi*Time_temp)) + I(sin(2*pi*Time_temp)))
+#I=identity, necessaire pour que R se retrouve car on a pas de vaariables cos, sin etc.., ainsi R sait qu'il s'agit de ligne de code.
+summary(tser.sin)
+#ces resultats ne doivent pas etre interpretes ici: sinon ERREUR: seulement le graphique est pertinent.
+tser.reg <- predict(tser.sin)
+#prédiction
+tser.dec <- decreg(temp_ts, tser.reg)
+#injection de ces resultats pour pouvoir ensuite faire la decomposition : on obtient objet tsd à la fin.
+plot(tser.dec, col = c(1, 4), xlab = "time (years)", stack = FALSE, resid = FALSE, lpos = c(0, 4))
+#residus pas pris en compte ici. courbe bleue=regression : ici elle se superpose bien à la série initiale.
+```
+
+
+
+```{r}
+## Décomposition par loess : qd il y a saisonnalité
+?decloess
+#t.window=NULL: ÇA VEUT DIRE QU'IL DETERMINERA TOUT SEUL L'ORDRE LE PLUS ADÉQUAT POUR FILTRER==> DETERMINE TT SEUL LA TAILLE DE LA FENETRE.
+
+# Avec tendance à long terme et cycle
+temp2.loess <- tsd(temp_ts, method = "loess",
+  trend = TRUE, s.window = "periodic")
+plot(temp2.loess, col = 1:4)
+#Avec trend=TRUE: On décompose la série initiale en 3 composantes: tendance, cycle et résidus. signal en rouge : le plus lisse possible, effet de bruit bien enlevé.
+#en vert on voit que l'effet saisonnier retiré est le meme chaque année. Ainsi dan sla courbe rouge on garde les variation d'annee en annee.
+
+## Extraction des composantes en séries temporelles
+temp2.loess.ts <- tseries(temp2.loess)
+plot(temp2.loess.ts)
+plot(temp2.loess.ts[, 2])
+acf(temp2.loess.ts[, 2]) # typique d'un cycle
+spectrum(temp2.loess.ts[, 2], span = c(3, 7))
+
+plot(temp2.loess.ts[, 1])
+acf(temp2.loess.ts[, 1]) # Typique d'une tendance très forte
+spectrum(temp2.loess.ts[, 1], span = c(3, 7))
+
+
+plot(temp2.loess.ts[, 3])
+acf(temp2.loess.ts[, 3]) # Quasi plus d'autrocorrélation
+spectrum(temp2.loess.ts[, 3], span = c(3, 7)) # Tout n'est pas éliminé
+```
+
+
+
