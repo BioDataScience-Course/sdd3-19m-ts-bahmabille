@@ -112,5 +112,7 @@ spectrum(earthq_ts, spans = c(3, 5))
 # Permet de mieux mettre en évidence les pics significatifs. ici il n'y a pas de pics significatifs : tous les pics sont endessous de l'intervalle de confiance.
 ```
 
+```{r}
 
+```
 

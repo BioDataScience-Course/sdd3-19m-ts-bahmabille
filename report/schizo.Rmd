@@ -114,8 +114,9 @@ plot(schizo_trend_test)
 
 schizo_trend_test$p.value 
 # Valeur p associée au test bootstrappé# 0 -> Il y a bel et bien une tendance significative au seuil alpha de 5%.
+```
 
-
+```{r}
 ## Etude de la tendance locale
 # Utilisation des sommes cumulées avec local.trend()
 schizo.lt <- local.trend(schizo_ts)
@@ -160,7 +161,6 @@ spectrum(schizo_ts)
 # L'argument 'spans' affectue ce lissage, il n'y a pas de règle stictes, il faut juste deux nombres impairs.
 spectrum(schizo_ts, spans = c(3, 5))
 # Permet de mieux mettre en évidence les pics significatifs
-
 ```
 
 
@@ -174,62 +174,62 @@ schizo.avg <- tsd(schizo_ts, method = "average", type = "additive",
 #choix d'order: etant donne la taille reduite du jeu de donnée et l'interpretation biologique du signal: activité cerebrale par jour. order de 6= fenetre de 13 observations. order=3 fenetre de 6 observations. ainsi on lisse les fluctuations(residus) et on mt en avant les tendances.
 schizo.avg
 plot(schizo.avg, col = 1:3)
-#premier graphique=serie initiale. deuxieme graphique= signal lissé, troisieme=residus. nous voyons que le signal est bien lissée (courbe rouge), nous nous sommes libérés des fluctuations non significatifs pour l'analyse de  la tendace générale.
-
-# Autre façon de représenter les résultats, en superposant les courbes pour eviter erreurs d'echelles entres les trois graphiques. stack=superposer.
+#premier graphique=serie initiale. deuxieme graphique= signal lissé, troisieme=residus. nous voyons que le signal est bien lissée (courbe rouge), nous nous sommes libérés des fluctuations non significatifs pour l'analyse de la tendace générale.
 plot(schizo.avg, col = 1:2, stack = FALSE, resid = FALSE)
-
+# Autre façon de représenter les résultats, en superposant les courbes pour eviter erreurs d'echelles entres les trois graphiques. stack=superposer.
 
 ## Transformation en séries temporelles multiples
 (schizo.avg.ts <- tseries(schizo.avg))
 # tseries extrait toutes les composantes de la série, ici "Components [1] "filtered"  "residuals"".
-
 is.ts(schizo.avg) # Non
 is.ts(schizo.avg.ts) # Oui
 is.mts(schizo.avg.ts) # Oui
-#is. est utilisé pour interroger. on peut aussi utiliset class().
-
+#is. est utilisé pour interroger/vérifier le type d'objet. on peut aussi utiliser class().
 plot(schizo.avg.ts)
 #nous voyons ici un premier graphique qui represente le serie lissee (sans les fluctuations ponctuelles) et celui des residus extraits.
+
+#OU
 
 ## Extraction d'une composante
 schizo.avg.filtered <- extract(schizo.avg, components = "filtered")
 #extract permet d'extraire une seule composante à la fois. Extract permet d'extraire une série temporelle meme à partir d'un objet tsd (non ts).
-
 is.ts(schizo.avg.filtered) # Oui: la Console nous indique TRUE, cela signifie qu'il s'agit d'une série temporelle.
 is.mts(schizo.avg.filtered) # Non: la Console nous indique FALSE, cela signifie qu'il ne s'agit pas d'une série temporelle multiple.
-
 plot(schizo.avg.filtered)
 #nous voyons ici la série lissé (sans fluctuations ponctuelles...résidus).
 
+
 # Analyse du filtrage
-acf(schizo.avg.filtered) # Lag est le décalage qui a permit de calculer s'il y a autocorrelation ou pas. Pour le premier point decalage nul=serie comparé à elle meme donc acf=1. autocorrelation presente.
+acf(schizo.avg.filtered) # Lag est le décalée ce qui a permit de calculer s'il y a autocorrelation ou pas. Pour le premier point decalage nul=serie comparé à elle meme donc acf=1. autocorrelation directe et significative presente.
 spectrum(schizo.avg.filtered, span = c(3, 5)) 
-#pour verifier qd on extrait la tendance qu'on la bien extraite. si on extrait les residus c'est pour voir s'il ne reste plus de tendance. ici la tendance a bien été extraite.
-(schizo.avg.trend <- trend.test(schizo.avg.filtered, R = 999)) #par bootstraps, entreparanthese pour directement imprime le resultat
+#pour verifier qd on extrait la tendance qu'on la bien extraite. ici la tendance a bien été extraite : effectivement on voit une tendance à la diminution de l'activité cérébrale.
+(schizo.avg.trend <- trend.test(schizo.avg.filtered, R = 999)) 
+#Recherche de la tendance générale dans la série filtrée. par bootstraps, entreparanthese pour directement imprime le resultat.
 plot(schizo.avg.trend)
 #histogramme: barre verticale a l'extreme: p<alpha: on rejette Ho: il y a tendance generale. donc la tendance generale a bien ete extraire.
-#qqplot: distribution est bien normale, les observations se repartissent bien sur la droite en pointillée.exception faite des premiers et des derniers.
+#qqplot: distribution est bien normale, les observations se repartissent bien sur la droite en pointillée. exception faite des premiers et des derniers.
+#barre verticale à l'extreme gauche= tendance générale très significative: tout aussi visible que avant la filtration dans ce cas-ci.
 schizo.avg.trend$p.value # p=0 : Tendance significative : compare with same test before filtration: avec la decomposition, elimination des cycles, on voit la tendance a longterme, ici elle était déjà visible avant la décomposition.
 
+#ET
 
 # Analyse des résidus
 schizo.avg.resid <- extract(schizo.avg, components = "residuals")
 is.ts(schizo.avg.resid) # Oui
 is.mts(schizo.avg.resid) # Non
 plot(schizo.avg.resid)
-# Analyse
+#aucune tendance générale n'est visible ici :OK.
 acf(schizo.avg.resid) 
 #aucune correlation entre les observation quand on extrait seulement les résidus.
-spectrum(schizo.avg.resid, span = c(3, 5)) # Idem
+spectrum(schizo.avg.resid, span = c(3, 5)) 
+#si on extrait les residus c'est pour voir s'il ne reste plus de tendance. c'est bien le cas ici.
+#on au cycle si la courbe monte jusqu'au traits bleus (vertical et horizontal qui se croisent) et puis il redescend. Ici on voit des cycles mais quand on interprète en biologie, on se rend compte que un cycle tous les 10 jours, 5 jours...: aucun sens : non sens.
 (schizo.avg.resid.trend <- trend.test(schizo.avg.resid, R = 999))
 plot(schizo.avg.resid.trend)
-#pour l'analyse spectral on au cycle si la courbe monte jusqu'au traits bleus (vertical et horizontal qui se croisent) et puis il redescend. Ici on voit des cycles mais quand on interprète en biologie, on se rend compte que un cycle tous les 10 jours, 5 jours..
+#barre verticala au milieu de l'histogramme=pas de tendance
+#qqplot=la distribution des résidus est bien normale.
 schizo.avg.resid.trend$p.value 
 # Absoluement pas de tendance générale car p=0.2>alpha=0.05.
-
-
-# Conclusion: la tendance générale et le cycle saisonnier ont été remarquablement bien séparés l'un de l'autre par le filtrage par les moyennes mobiles
 
 #)))
 ```
@@ -238,34 +238,57 @@ schizo.avg.resid.trend$p.value
 ```{r}
 library(pastecs)
 ## Décomposition par médianes mobiles
-# Données relatives à du plancton le long d'un transect
-
-schizo.dec <- decmedian(schizo_ts, order = 5, times = 10, ends = "fill")
-#choix de l'ordre et de times, essayer plusieurs valeurs, éviter valeur trop importantes pour pas trop lisser la serie mais suffisant pour avoir une difference par rapport a la srie initiale. end=par defaut.
+schizo.dec <- decmedian(schizo_ts, order = 6, times = 10, ends = "fill")
+#choix de l'ordre et de times, essayer plusieurs valeurs, éviter valeur trop importantes pour pas trop lisser la serie mais suffisant pour avoir une difference par rapport a la série initiale. end=par defaut.
 #analyse peu efficace : palliers peu définis.
-
 plot(schizo.dec, col = c(1,4,2), xlab = "stations")
-#serie initiale en noir: pic du a courants froids. en bleu il y a des palliers: significatif? tester ici bas
+#serie initiale en noir. en bleu il y a des palliers: significatif? tester ici bas
 #c(1,4,2) correspondent aux couleurs noir, bleu et rouge dans R. 
+#plusieurs pallier sont visibles
+
+#OU
+
+plot(schizo.dec, col = 1:2, stack = FALSE, resid = FALSE)
+# Autre façon de représenter les résultats, en superposant les courbes pour eviter erreurs d'echelles entres les trois graphiques. stack=superposer.
+
+#OU
 
 plot(schizo.dec, col = c(1,4,2), xlab = "stations", stack = FALSE, resid = FALSE)
 lines(c(60,60), c(25, 95), col=4, lty = 2)
 #dans ce cas-ci la ligne de code ne sert pas car elle délimite pas la transition d'une zone à l'autre. mais tu peux l'utiliser pour d'autres jeux de données.
 
-
-
-## Méthode des différences
-(schizo.dif <- tsd(schizo_ts, lag = , order = 3, method = "diff"))
-plot(schizo.dif, col = 1:3)
-#???????????
-
-# Spectre de schizo_ts
-spectrum(schizo_ts)
+#Analyse
+schizo.dec.ts <- tseries(schizo.dec)
 # Extraire série de schizo diff
-schizo.dif.ts <- tseries(schizo.dif)
+plot(schizo.dec.ts)
 # Transforme toute les composante
-plot(schizo.dif.ts) # calcul de deux séries: filtrée et résidus
+#calcul de deux séries: filtrée et résidus
+spectrum(schizo.dec.ts[, 1])
 # Spectre de la première série (la série filtrée)
-spectrum(schizo.dif.ts[, 1])
-
 ```
+
+
+```{r}
+## Méthode des différences pour enlever l'effet de la tendance generale: TESTER PLUSIEURS DECALAGES.
+(schizo.dif <- tsd(schizo_ts, lag = 1, order = 3, method = "diff"))
+plot(schizo.dif, col = 1:3)
+#on peut voir que la tendance generale a ete enleve de la serie filtree, en effet, la signal ne tend pas a diminuer, il suit une droite horizontale. Par contre dans les residus ont peut voir que le signal est moins intense quand le temps augmente.
+
+#OU
+
+(schizo.dif1 <- tsd(schizo_ts, lag = 3, order = 3, method = "diff"))
+plot(schizo.dif1, col = 1:3)
+
+spectrum(schizo_ts)
+# Spectre de schizo_ts
+schizo.dif.ts <- tseries(schizo.dif)
+# Extraire série de schizo diff : pour verifier qd on extrait la tendance qu'on la bien extraite. si on extrait les residus c'est pour voir s'il ne reste plus de tendance.
+plot(schizo.dif.ts)
+# Transforme toute les composante
+#calcul de deux séries: filtrée et résidus
+spectrum(schizo.dif.ts[, 1])
+# Spectre de la première série (la série filtrée)
+```
+
+
+
