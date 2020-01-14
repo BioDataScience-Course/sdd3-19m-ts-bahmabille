@@ -34,6 +34,7 @@ range(releve$Day[2:61] - releve$Day[1:60]) # min et max
 regul.screen(releve$Day, xmin = 1:11, deltat = 16:27)
 #de 16 a 27 : ainsi on encadre le pas moyen =22. pour le debut entre 1 et 11.
 #xmin commence du jour 1 au jour 11 et deltat intervalle de 16 à 27 j
+
 #tol : la fenetre de tolerence: nombre d'obs prises en compte autour de la valeur. 
 #n: nombre maximal de valeurs à prendre en compte pour éviter toute extrapolation. Calculé en tenant compte des différentes combinaisons de deltat et xmin.
 #nbr.match : nombre d'obs qui vont coller entre la serie de depart et la serie regularisee en tenant compte de la fenetre de tolerence. celui ci est le tableau le plus important.
@@ -44,8 +45,7 @@ regul.screen(releve$Day, xmin = 1:11, deltat = 16:27)
 
 
 regul.adj(releve$Day, xmin = 8, deltat = 21)
-# Choix de la tolérance
-# Donne le nombre d'observation par rapport à la grille choisie
+# Choix de la tolérance: donne le nombre d'observation à comptabiliser dans la fnetre de tolérence par rapport à la grille choisie: objectif = ??
 #regul.adj : Adjust regulation parameters : Calculate and plot an histogram of the distances between interpolated observations in a regulated time series and closest observations in the initial irregular time series. This allows to optimise the tol parameter.
 ```
 
@@ -73,7 +73,7 @@ relreg <- regul(releve$Day, releve$Melosul,
 relreg
 plot(relreg)
 # on a juste change la methode c---->l .
-# graphe pas de prolongation du pics MAIS  on a loupe la valeur maximum.
+# graphe pas de prolongation du pics MAIS on a loupe la valeur maximum.
 
 
 
@@ -130,7 +130,5 @@ tail(forecast) # Beaucoup d'information!
 plot(SP500.pred, forecast)
 # Examiner les composantes
 prophet_plot_components(SP500.pred, forecast)
-# On constate que la méthode prend en compte à la fois une tendance à long terme
-# une variation siasonnière,
-# mais aussi une variation en fonction du jour de la semaine!
+# On constate que la méthode prend en compte à la fois une tendance à long terme, une variation siasonnière, mais aussi une variation en fonction du jour de la semaine!
 ```

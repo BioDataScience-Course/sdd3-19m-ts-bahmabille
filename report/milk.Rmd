@@ -162,7 +162,7 @@ spectrum(milK.dif.ts[, 1])
 
 
 ```{r}
-## Décomposition sinusoidale des températures et du CO2 : grace a la regression (lm)
+## Décomposition sinusoidale par la regression (lm)
 Time_milK <- time(milK_ts)
 tser.sin <- lm(milK_ts ~ I(cos(2*pi*Time_milK)) + I(sin(2*pi*Time_milK))+ Time_milK)
 #I=identity, necessaire pour que R se retrouve car on a pas de vaariables cos, sin etc.., ainsi R sait qu'il s'agit de ligne de code.
@@ -181,14 +181,14 @@ plot(tser.dec, col = c(1, 4), xlab = "time (years)", stack = FALSE, resid = FALS
 ```{r}
 ## Décomposition par loess : qd il y a saisonnalité
 ?decloess
-#t.window=NULL: ÇA VEUT DIRE QU'IL DETERMINERA TOUT SEUL L'ORDRE LE PLUS ADÉQUAT POUR FILTRER==> DETERMINE TT SEUL LA TAILLE DE LA FENETRE.
+#t.window=NULL: ÇA VEUT DIRE QU'IL DETERMINERA TOUT SEUL L'ORDRE LE PLUS ADÉQUAT POUR FILTRER==> DETERMINE TT SEUL LA TAILLE DE LA FENETRE POUR LA TENDANCE (car t-window).
 
 # Avec tendance à long terme et cycle
 milK2.loess <- tsd(milK_ts, method = "loess",
   trend = TRUE, s.window = "periodic")
 plot(milK2.loess, col = 1:4)
 #Avec trend=TRUE: On décompose la série initiale en 3 composantes: tendance, cycle et résidus. signal en rouge : le plus lisse possible, effet de bruit bien enlevé.
-#en vert on voit que l'effet saisonnier retiré est le meme chaque année. Ainsi dan sla courbe rouge on garde les variation d'annee en annee.
+#en vert on voit que l'effet saisonnier retiré est le meme chaque année. Ainsi dans la courbe rouge on garde les variation d'annee en annee.
 
 ## Extraction des composantes en séries temporelles
 milK2.loess.ts <- tseries(milK2.loess)

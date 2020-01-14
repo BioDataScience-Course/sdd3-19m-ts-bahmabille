@@ -40,6 +40,7 @@ boxplot_by_cycle <- function(ts)
 
 boxplot_by_cycle(beer_ts)
 
+library(pastecs)
 notm.stat <- stat.slide(time(beer_ts), beer_ts, xmin = 1956, deltat = 6)
 notm.stat
 
@@ -69,18 +70,18 @@ beer_trend_test$p.value
 ## Etude de la tendance locale
 # Utilisation des sommes cumulées avec local.trend()
 beer.lt <- local.trend(beer_ts)
-#en pointillé on voit la série initiale. la courbe rouge (=sommes cumulées) chaque segment de la ligne brisée représente une tendance locale : une période où la moyenne ne varie pas: la valeur de cette moyenne est donnée par la pente du segment additionnée de r (=moyenne de toute la série).Par rapport à la moyenne globale des observations, soit on est au-dessus ou en-dessous. 
+#en pointillé on voit la série initiale. la courbe rouge (=sommes cumulées) chaque segment de la ligne brisée représente une tendance locale : une période où la moyenne ne varie pas: la valeur de cette moyenne est donnée par la pente du segment additionnée de r (=moyenne de toute la série). Par rapport à la moyenne globale des observations, soit on est au-dessus ou en-dessous. 
 
 identify(beer.lt)
 # ATTENTION: identify() ne peut PAS être utilisée dans un R Markdown ou Notebook. Cette fonction doit être utilisée seulement dans le fenêtre CONSOLE de R!!!
 #Selectionner cette ligne de code avec la précédente avec d'executer (Ctrl+Enter). Cliquer les points voulus (dans ce graphe-ci un point au début, un au milieu qd est T° très basses et un point à la fin), puis indiquer "finish"...
 #La console nous donne : $pos [1]  2 182 471 (position de points selectionnés, 3 en tout). $trends [1] 103.7833 157.0035 (pente des 2 segments). $k [1] 136.3954 (moyenne générale).
-#localement les valeurs ont tendance à etre moins elevees que la moyenne global.
+#localement les valeurs ont tendance à etre moins elevees que la moyenne globalau départ puis plus elevees.
 #aggregation inutile dans ce cas ci car tendances locales sont deja bien amplifiee pas la ligne rouge.
 
 
 ## Analyse spectrale : détecte des cycles plus subtils et même des cycles qui se surperposent. qlq soit le signal on peut le représenter par un ensemble de sinus et de cos de periode croissante avec une valeur d'amplitude adéquate à chaque signal. si amplitude des différentes composantes est faible alors signal faible et inversément.
-## La fréquence est représentée en abscisse et les spectres en ordonnée. Il y a un cycle si un des spectres d’une fréquence différente de zéro se trouve dans la l’intervalle de confiance représenté en haut à droite en bleu. 
+## La fréquence est représentée en abscisse et les spectres en ordonnée. Il y a un cycle si un des spectres d’une fréquence différente de zéro se trouve dans l’intervalle de confiance représenté en haut à droite en bleu. 
 spectrum(beer_ts) 
 # Technique très puissante, mais signal brut bruité => lissage nécessaire!
 # L'argument 'spans' affectue ce lissage, il n'y a pas de règle stictes, il faut juste deux nombres impairs.
@@ -114,6 +115,7 @@ library(pastecs)
 #Moyennes mobiles: but = éliminer les cycles.
 beer.avg <- tsd(beer_ts, method = "average", type = "additive",
   order = 6, times = 10)
+#avec order de 6 on a une fenetre de 12, s'il y a un cycle annuel (d'après le spectrum fait aprèss local.trend, oui, il y a un cycle annuel) alors on l'élimine ici par la méhode des moyennes mobiles.
 
 beer.avg
 plot(beer.avg, col = 1:3)
@@ -148,11 +150,9 @@ is.ts(beer.avg.resid) # Oui
 is.mts(beer.avg.resid) # Non
 plot(beer.avg.resid)
 #aucune tendance générale n'est visible ici :OK.
-acf(beer.avg.resid) 
-#aucune correlation entre les observation quand on extrait seulement les résidus.
-spectrum(beer.avg.resid, span = c(3, 5)) 
-#si on extrait les residus c'est pour voir s'il ne reste plus de tendance. c'est bien le cas ici.
-#on au cycle si la courbe monte jusqu'au traits bleus (vertical et horizontal qui se croisent) et puis il redescend. Ici on voit des cycles mais quand on interprète en biologie, on se rend compte que un cycle tous les 10 jours, 5 jours...: aucun sens : non sens.
+acf(beer.avg.resid) #on voit que le cycle annuel a bien été éliminé.
+spectrum(beer.avg.resid, span = c(3, 5)) #on voit que le cycle annuel a bien été éliminé.
+
 (beer.avg.resid.trend <- trend.test(beer.avg.resid, R = 999))
 plot(beer.avg.resid.trend)
 #barre verticala au milieu de l'histogramme=pas de tendance
