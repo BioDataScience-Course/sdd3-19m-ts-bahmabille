@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-### La Schizophrénie
+La Schizophrénie
 
 Un test d'activité cérébrale est réalisé sur un patient quotidiennement durant 120 jours. Au jour 60, les médécins lui prescrivent le médicament. 
 
@@ -18,11 +18,12 @@ Le nouveau médicament a t'il un effet sur l'activité cérébrale du patient é
 > Jeu de données : schizo.txt
 
 
+##Description de la série initiale
 
 ```{r}
 library(readr)
 schizo <- readr::read_csv("../data/schizo.txt")
-#il ne faut pass lancer Sciview en meme temps que readr, sinon il y aura un conflit de package.
+#il ne faut pas lancer Sciview en meme temps que readr, sinon il y aura un conflit de package.
 #View(schizo)
 
 class(schizo) #ici nous voyons que schizo contient des objets du type "spec_tbl_df", "tbl_df","tbl" et "data.frame". Nous allons donc le transformer en objet ts plus bas.
@@ -41,7 +42,7 @@ time(schizo_ts)
 #"time creates the vector of times at which a time series was sampled. 
 
 plot(schizo_ts) 
-# Ce graphique nous montre les valeurs des differents echantillonnages allant du temps 1 au 120. Remarquons que les observations sont reliées les unes autres en une ligne continue pour indiquer le dépendance des observations entre elles (contrairement au nuage de points).
+# Ce graphique nous montre les valeurs des differents echantillonnages allant du temps 1 au 120. Remarquons que les observations sont reliées les unes autres en une ligne continue pour indiquer la dépendance des observations entre elles (contrairement au nuage de points).
 
 #((
 cycle(schizo_ts)
@@ -55,7 +56,7 @@ split(schizo_ts, cycle(schizo_ts))
 boxplot(split(schizo_ts, cycle(schizo_ts)))
 # Boites de dispersion (avec les cinqs nombres: premier quartile=q1, mediane=deuxième quartile, troisième quartile = q3, valeur minimal et valeur maximale comprises dans 1,5*IQR (interquartile range= q3-q1)) pour les données mensuelles : une boite pour chacun des cycles : une boite avec toutes les valeurs de janvier, une avec toutes les valeurs de février, etc. Ceci est possible grace aux fonctions cycles et split. # Ici un seul boxplot est observée car il n'y a pas plusieurs cycles. L'utilisation de la fonction boxplot n'est pas justifié ici.
 
-#Création d'une fonction personnalisée pour plus de confort puis 3° ligne de code = pour générer les boxplots. # Ici un seul boxplot est observée car il n'y a pas plusieurs cycles. L'utilisation de la fonction boxplot_by_cycle n'est pas justifié ici.
+#Création d'une fonction personnalisée pour plus de confort puis 3° ligne de code = pour générer les boxplots. # Ici un seul boxplot est observée car il n'y a pas plusieurs cycles. L'utilisation de la fonction boxplot_by_cycle n'est pas justifiée ici.
 boxplot_by_cycle <- function(ts)
   boxplot(split(ts, cycle(ts)))
 
@@ -66,14 +67,18 @@ library(pastecs)
 # besoin de ce package
 
 ?stat.slide
-#"Statistical parameters are not constant along a time series: mean or variance can vary each year, or during particular intervals (radical or smooth changes due to a pollution, a very cold winter, a shift in the system behaviour, etc. Sliding statistics offer the potential to describe series on successive blocs defined along the space-time axis."
-#ARGUMENTS x: a vector with time data for stat.slide(), or a 'stat.slide' object for the methods. y : a vector with observation at corresponding times. xcut : a vector with the position in time of the breaks between successive blocs. xcut=NULL by default. In the later case, a vector with equally spaced blocs is constructed using xmin, n and frequency or deltat. If a value is provided for xcut, then it supersedes all these other parameters. xmin	: the minimal value in the time-scale to use for constructing a vector of equally spaced breaks. n	: the number of breaks to use. frequency	: the frequency of the breaks in the time-scale. deltat	: the bloc interval to use for constructing an equally-spaced break vector. deltat is 1/frequency. basic	: do we have to return basic statistics (by default, it is FALSE)? These are: the number of values (nbr.val), the number of null values (nbr.null), the number of missing values (nbr.na), the minimal value (min), the maximal value (max), the range (range, that is, max-min) and the sum of all non-missing values (sum). desc	: do we have to return descriptive statistics (by default, it is FALSE)? These are: the median (median), the mean (mean), the standard error on the mean (SE.mean), the confidence interval of the mean (CI.mean) at the p level, the variance (var), the standard deviation (std.dev) and the variation coefficient (coef.var) defined as the standard deviation divided by the mean.
+#"Statistical parameters are not constant along a time series: mean or variance can vary each year, or during particular intervals (radical or smooth changes due to a pollution, a very cold winter, a shift in the system behaviour, etc). 
+#Sliding statistics offer the potential to describe series on successive blocs defined along the space-time axis."
+#Usage: stat.slide(x, y, xcut=NULL, xmin=min(x), n=NULL, deltat=1/frequency...)
+#ARGUMENTS : x: a vector with time data for stat.slide(). y : a vector with observation at corresponding times. 
+#xcut : a vector with the position in time of the breaks between successive blocs. xcut=NULL by default.
+#xmin	: the minimal value in the time-scale to use for constructing a vector of equally spaced breaks. 
+#n: the number of breaks to use.
+#frequency: the frequency of the breaks in the time-scale. deltat: the bloc interval to use for constructing an equally-spaced break vector. deltat is 1/frequency. 
 
 not_stat <- stat.slide(time(schizo_ts), schizo_ts, xmin = 1, deltat = 6)
-# Vecteur temps par intervalles de 3 jours.
-
 not_stat
-# Calcul de quelques descripteurs statistiques : de 1 à 10 lignes = statistiques | de 1 à 40 colonnes = intervalles de temps pour lesquels chacune des statistiques a été calculée.
+# Calcul de quelques descripteurs statistiques : de 1 à 10 lignes = 10 statistiques calculées | de 1 à 40 colonnes = intervalles de temps pour lesquels chacune des statistiques a été calculée.
 
 plot(not_stat) 
 # Représentation graphique de ces valeurs
@@ -85,12 +90,15 @@ plot(not_stat)
 x <- rnorm(120) #création d'une vecteur de nombres aléatoires
 x
 x_ts <- ts(x, start = 1, end = 120, frequency = 1) #transformation en objet ts.
-acf(x_ts) #"The function acf computes (and by default plots) estimates of the autocovariance or autocorrelation function. lag.max	: maximum lag at which to calculate the acf. Default is 10*log10(N/m) where N is the number of observations and m the number of series. Will be automatically limited to one less than the number of observations in the series." 
+acf(x_ts) 
+#"The function acf computes (and by default plots) estimates of the autocovariance or autocorrelation function. lag.max	: maximum lag at which to calculate the acf. Default is 10*log10(N/m) where N is the number of observations and m the number of series. Will be automatically limited to one less than the number of observations in the series." 
 #L'autocorrelation est directe si l'ACF vaut 1, elle est nulle si l'ACF vaut 0, l'autocorrelation est inverse si l'ACF vaut -1. Les ligne discontinues en bleu indiquent l'interval où la valeur de l'ACF est non significative. Nous pouvons observer qu'il n'y a pas d'autocorrelation exception faite de la première valeur qui a toujours une valeur de correlation de 1. 
 
 acf(schizo_ts) #Pour schizo l'autocorrelation est positive est significative.
 
 ```
+
+##Tendance générale
 
 ```{r}
 ## Identification de tendance à long terme
@@ -109,12 +117,14 @@ schizo_trend_test
 #original = coeff corrélation, bias = asymétrie, erreur standard= ecart-type par rapport à la distribution normale => le plus important c'est le graphique. original= -0.6548362, correlation inverse entre l'axe y et le temps, l'activité cérébrale diminue avec le temps.
 
 plot(schizo_trend_test)
-#histogramme: distibution de p bootstrapée, pointille = valeur du coeff de corrélation observé dans la série non réechantillone. plus le pointillé est extreme à gauche ou à droite dans la série plus on a tendance à penser que Ho est moins plausible=> tendance à rejetter Ho (=pas de tendance globale). p calculé grâce a l'air sous la courbe (qui relierait les sommets de tous les barres verticales de l'histogramme) aux extremités du pointillé. La droite verticale pointillée est à l'extreme gauche (tendance à penser qu'il y a une tendance générale déjà dan sla série initiale), d'où la faible valeur de p; p<alpha==> on rejette Ho: il y a une tendance générale.
+#histogramme: distibution de p bootstrapée, pointille = valeur du coeff de corrélation observé dans la série non réechantillone. plus le pointillé est extreme à gauche ou à droite dans la série plus on a tendance à penser que Ho est moins plausible=> tendance à rejetter Ho (=pas de tendance globale). p calculé grâce a l'air sous la courbe (qui relierait les sommets de tous les barres verticales de l'histogramme) aux extremités du pointillé. La droite verticale pointillée est à l'extreme gauche (tendance à penser qu'il y a une tendance générale déjà dans la série initiale), d'où la faible valeur de p; p<alpha==> on rejette Ho: il y a une tendance générale.
 #quantile-quantile pour voir si la distibution boostrapée se rapproche d'une distribution normal ou pas. Reponse=OUI si les observations (ronds noirs) suivent la droite en pointillé. C'est bien le cas ici exception faite des premières et des dernières observations.
 
 schizo_trend_test$p.value 
 # Valeur p associée au test bootstrappé# 0 -> Il y a bel et bien une tendance significative au seuil alpha de 5%.
 ```
+
+#Tendance locale
 
 ```{r}
 ## Etude de la tendance locale
@@ -123,47 +133,39 @@ schizo.lt <- local.trend(schizo_ts)
 #en pointillé on voit la série initiale. la courbe rouge (=sommes cumulées) chaque segment de la ligne brisée représente une tendance locale : une période où la moyenne ne varie pas: la valeur de cette moyenne est donnée par la pente du segment additionnée de r (=moyenne de toute la série).Par rapport à la moyenne globale des observations, soit on est au-dessus ou en-dessous. La série rouge amplifie donc les variations. Ici on voit un premier segment de pente positive, puis un segment de pente presque nulle suivi d'un segment de pente négative. Des valeur précises sont données par la fonction identify.
 
 identify(schizo.lt)
-# Selectionner cette ligne de code avec la précédente avec d'executer (Ctrl+Enter). Cliquer les points voulus (dans ce graphe-ci un point au début, un au milieu qd est T° très basses et un point à la fin), puis indiquer "finish"...
+# Selectionner cette ligne de code avec la précédente avec d'executer (Ctrl+Enter). Cliquer les points voulus (dans ce graphe-ci un point au début, un au milieu et un point à la fin), puis indiquer "finish"...
 # ATTENTION: identify() ne peut PAS être utilisée dans un R Markdown ou Notebook. Cette fonction doit être utilisée seulement dans le fenêtre CONSOLE de R!!!
 # Recopier la ligne de code précédente aussi dans la console.
 #La console nous donne : $pos[1]   6  63  80 119 (position de points selectionnés, 4 en tout). $trends[1] 73.57895 53.17647 33.82051 (pente des 3 segments). $k[1] 56.325 (moyenne générale).
 #en tout on voit une augmentation de l'activité cérébrale puis on stagnation du 63 ième jour jusqu'à environ le 80 ième jour et enfin un diminution de l'activité cérébrale jusqu'au 120 ième jour.
 
-#((aggrégation des données, on indique 1 car l'unite de temps dans cette serie est de 1.
-(schizo2 <- aggregate(schizo_ts, 1/5, mean))
-#1 correspond à la fréquence de la time série, tu es obligée de mettre une valeur décimale: ex:1/5= un pas de temps correspond à 5 observations. 
-
-
-#Dans ce cas-ci il n'est pas pertinent d'utiliser la fonction aggregate car elle permet d'aggréger (écraser) les données pour un cycle et ainsi obtenir un aperçu sur les tendances locales pour plusieurs cycles. Dons quand il n'y a pas de cycles, il ne faut pas utiliser aggregate.
-#aggregate sert à aggréger les données sur un interval de temps donné c'est à dire qu'il va diviser le jeux de donnée en sous ensemble (dont le nombre dépend de l'interval de temps choisi pour aggréger les données au plus l'interval est grand au moins il y a de sous ensemble) et calcul les statistiques sur ces sous ensemble afin de retourner le courbe noire que l'on peut voir sur le graphe 2, sur le graphe 3 on voit le courbe des sommes cumulées en rouge et la courbe retournée par aggregate.
-
-plot(schizo2)
-# Graphe après aggrégation : 
-# La courbe en rouge (somme cumulées) amplifie les variations
-# Choisir manuellement les points à identifier
-# ATTENTION: identify() ne peut PAS être utilisée dans un R Markdown ou Notebook
-# Cette fonction doit être utilisée seulement dans le fenêtre console de R!!!
-schizo.lt2 <- local.trend(schizo2)
-identify(schizo.lt2) # Cliquer les points voulus, puis indiquer "finish"...
-#LA CONSOLE nous donne: 
-#$pos[1]   7  63 119  trois points : un au début, un au milieu et un à la fin.
-#$trends
-#[1] 73.83929 39.69643 : les deux pentes
-#$k
-#[1] 56.325 : moyenne en tout
-
-#))
-
-
-## Analyse spectrale : détecte des cycles plus subtils et même des cycles qui se surperposent. qlq soit le signal on peut le représenter par un ensemble de sinus et de cos de periode croissante avec une valeur d'amplitude adéquate à chaque signal. si amplitude des différentes composantes est faible alors signal faible et inversément.
+## Analyse spectrale : détecte des cycles plus subtils et même des cycles qui se surperposent. qlq soit le signal on peut le représenter par un ensemble de sinus et de cos de periode croissante avec une valeur d'amplitude adéquate à chaque signal. si l'amplitude des différentes composantes est faible alors signal faible et inversément.
 spectrum(schizo_ts) 
 # Technique très puissante, mais signal brut bruité => lissage nécessaire!
 # L'argument 'spans' affectue ce lissage, il n'y a pas de règle stictes, il faut juste deux nombres impairs.
 spectrum(schizo_ts, spans = c(3, 5))
 # Permet de mieux mettre en évidence les pics significatifs
+
+
+
+#(((aggrégation des données, on indique 1 car l'unite de temps dans cette serie est de 1.
+##calcul les sommes cumulées : les cycles sont tellement importants dans la série qu'ils masquent des variations à plus long terme. le cycle annuel perturbe l'analyse PLURIannuelle =>on élimine ce signal cyclique en travaillant sur des moyennes annuelles? pour ce faire on aggrége.
+(schizo2 <- aggregate(schizo_ts, 1/5, mean))
+#1 correspond à la fréquence de la time série, tu es obligée de mettre une valeur décimale: ex:1/5= un pas de temps correspond à 5 observations. 
+plot(schizo2)
+#aggregate sert à aggréger les données sur un interval de temps donné c'est à dire qu'il va diviser le jeux de donnée en sous ensemble (dont le nombre dépend de l'interval de temps choisi pour aggréger les données au plus l'interval est grand au moins il y a de sous ensemble) et calcul les statistiques sur ces sous ensemble afin de retourner le courbe noire que l'on peut voir sur le graphe schizo2.
+schizo.lt2 <- local.trend(schizo2)
+#Sur le graphe schizo.lt2 on voit le courbe des sommes cumulées en rouge et la courbe retournée par aggregate en noir.
+identify(schizo.lt2) # Cliquer les points voulus, puis indiquer "finish"...
+#LA CONSOLE nous donne: 
+#$pos[1]   7  63 119  trois points : un au début, un au milieu et un à la fin.
+#$trends[1] 73.83929 39.69643 : les deux pentes
+#$k[1] 56.325 : moyenne en tout
+
+#Dans ce cas-ci il n'est pas pertinent d'utiliser la fonction aggregate car elle permet d'aggréger (écraser) les données pour un cycle et ainsi obtenir un aperçu sur les tendances locales pour plusieurs cycles. Donc quand il n'y a pas de cycles, il ne faut pas utiliser aggregate))).
 ```
 
-
+#Decaverage
 
 ```{r}
 library(pastecs)
@@ -171,27 +173,29 @@ library(pastecs)
 ##(((Moyennes mobiles: but = éliminer les cycles: or pas de cycles dans schizo==> pas utiliser decaverage ou tsd:method=average, sur ce jeu de données.
 schizo.avg <- tsd(schizo_ts, method = "average", type = "additive",
   order = 3, times = 3)
-#choix d'order: etant donne la taille reduite du jeu de donnée et l'interpretation biologique du signal: activité cerebrale par jour. order de 6= fenetre de 13 observations. order=3 fenetre de 6 observations. ainsi on lisse les fluctuations(residus) et on mt en avant les tendances.
+#choix d'order: etant donne la taille reduite du jeu de donnée et l'interpretation biologique du signal: activité cerebrale par jour. order de 6= fenetre de 13 observations. order=3 fenetre de 6 observations. ainsi on lisse les fluctuations(residus) et on met en avant les tendances.
 schizo.avg
 plot(schizo.avg, col = 1:3)
 #premier graphique=serie initiale. deuxieme graphique= signal lissé, troisieme=residus. nous voyons que le signal est bien lissée (courbe rouge), nous nous sommes libérés des fluctuations non significatifs pour l'analyse de la tendace générale.
 plot(schizo.avg, col = 1:2, stack = FALSE, resid = FALSE)
-# Autre façon de représenter les résultats, en superposant les courbes pour eviter erreurs d'echelles entres les trois graphiques. stack=superposer.
+#Autre façon de représenter les résultats, en superposant les courbes pour eviter erreurs d'echelles entres les trois graphiques. stack=superposer.
 
 ## Transformation en séries temporelles multiples
 (schizo.avg.ts <- tseries(schizo.avg))
-# tseries extrait toutes les composantes de la série, ici "Components [1] "filtered"  "residuals"".
+#Convert a 'regul' or a 'tsd' object into a time series : l'objet ici est schizo.avg qui est un tsd.
+# tseries extrait toutes les composantes de la série, la console indique :"Components [1] "filtered" "residuals"".
 is.ts(schizo.avg) # Non
 is.ts(schizo.avg.ts) # Oui
 is.mts(schizo.avg.ts) # Oui
 #is. est utilisé pour interroger/vérifier le type d'objet. on peut aussi utiliser class().
 plot(schizo.avg.ts)
-#nous voyons ici un premier graphique qui represente le serie lissee (sans les fluctuations ponctuelles) et celui des residus extraits.
+#nous voyons ici un premier graphique qui represente le serie lissée (sans les fluctuations ponctuelles) et celui des residus extraits.
 
 #OU
 
-## Extraction d'une composante
+## Extraction d'une composante : la série filtrée
 schizo.avg.filtered <- extract(schizo.avg, components = "filtered")
+#‘extract’ is a generic function for extracting a part of the original dataset according to an analysis.
 #extract permet d'extraire une seule composante à la fois. Extract permet d'extraire une série temporelle meme à partir d'un objet tsd (non ts).
 is.ts(schizo.avg.filtered) # Oui: la Console nous indique TRUE, cela signifie qu'il s'agit d'une série temporelle.
 is.mts(schizo.avg.filtered) # Non: la Console nous indique FALSE, cela signifie qu'il ne s'agit pas d'une série temporelle multiple.
@@ -199,21 +203,21 @@ plot(schizo.avg.filtered)
 #nous voyons ici la série lissé (sans fluctuations ponctuelles...résidus).
 
 
-# Analyse du filtrage
-acf(schizo.avg.filtered) # Lag est le décalée ce qui a permit de calculer s'il y a autocorrelation ou pas. Pour le premier point decalage nul=serie comparé à elle meme donc acf=1. autocorrelation directe et significative presente.
+# Analyse du filtrage (acf, spectrum, tendance générale)
+acf(schizo.avg.filtered) #Lag est le décalée ce qui a permit de calculer s'il y a autocorrelation ou pas. Pour le premier point decalage nul=serie comparé à elle meme donc acf=1. autocorrelation directe et significative presente.
 spectrum(schizo.avg.filtered, span = c(3, 5)) 
 #pour verifier qd on extrait la tendance qu'on la bien extraite. ici la tendance a bien été extraite : effectivement on voit une tendance à la diminution de l'activité cérébrale.
 (schizo.avg.trend <- trend.test(schizo.avg.filtered, R = 999)) 
-#Recherche de la tendance générale dans la série filtrée. par bootstraps, entreparanthese pour directement imprime le resultat.
+#Recherche de la tendance générale dans la série filtrée. par bootstraps, entre-parantheses pour directement imprime le resultat.
 plot(schizo.avg.trend)
 #histogramme: barre verticale a l'extreme: p<alpha: on rejette Ho: il y a tendance generale. donc la tendance generale a bien ete extraire.
 #qqplot: distribution est bien normale, les observations se repartissent bien sur la droite en pointillée. exception faite des premiers et des derniers.
 #barre verticale à l'extreme gauche= tendance générale très significative: tout aussi visible que avant la filtration dans ce cas-ci.
-schizo.avg.trend$p.value # p=0 : Tendance significative : compare with same test before filtration: avec la decomposition, elimination des cycles, on voit la tendance a longterme, ici elle était déjà visible avant la décomposition.
+schizo.avg.trend$p.value # p=0 : Tendance significative : compare with same test before filtration: avec la decomposition=elimination des cycles, on voit la tendance à longterme, ici elle était déjà visible avant la décomposition.
 
 #ET
 
-# Analyse des résidus
+# Extraction et analyse des résidus (acf, spectrum, tendance générale)
 schizo.avg.resid <- extract(schizo.avg, components = "residuals")
 is.ts(schizo.avg.resid) # Oui
 is.mts(schizo.avg.resid) # Non
@@ -223,23 +227,21 @@ acf(schizo.avg.resid)
 #aucune correlation entre les observation quand on extrait seulement les résidus.
 spectrum(schizo.avg.resid, span = c(3, 5)) 
 #si on extrait les residus c'est pour voir s'il ne reste plus de tendance. c'est bien le cas ici.
-#on au cycle si la courbe monte jusqu'au traits bleus (vertical et horizontal qui se croisent) et puis il redescend. Ici on voit des cycles mais quand on interprète en biologie, on se rend compte que un cycle tous les 10 jours, 5 jours...: aucun sens : non sens.
+#on aurait un cycle si la courbe monte jusqu'au traits bleus (vertical et horizontal qui se croisent) et puis redescend. Ici on voit des cycles mais quand on interprète en biologie, on se rend compte que un cycle tous les 10 jours, 5 jours...: aucun sens : non sens.
 (schizo.avg.resid.trend <- trend.test(schizo.avg.resid, R = 999))
 plot(schizo.avg.resid.trend)
-#barre verticala au milieu de l'histogramme=pas de tendance
+#barre vertical au milieu de l'histogramme=pas de tendance
 #qqplot=la distribution des résidus est bien normale.
 schizo.avg.resid.trend$p.value 
-# Absoluement pas de tendance générale car p=0.2>alpha=0.05.
-
-#)))
+#Absoluement pas de tendance générale car p=0.2>alpha=0.05))).
 ```
 
-
+#Decmedian
 ```{r}
 library(pastecs)
 ## Décomposition par médianes mobiles
 schizo.dec <- decmedian(schizo_ts, order = 6, times = 10, ends = "fill")
-#choix de l'ordre et de times, essayer plusieurs valeurs, éviter valeur trop importantes pour pas trop lisser la serie mais suffisant pour avoir une difference par rapport a la série initiale. end=par defaut.
+#choix de l'ordre et de times, essayer plusieurs valeurs, éviter valeur trop importantes pour pas trop lisser la serie mais suffisant pour avoir une difference par rapport a la série initiale. end=par defaut.	the method used to calculate ends. Either "NAs" (fill extremes, non-calculable values with NAs), or "fill" (fill these extremes with the closest calculable median)
 #analyse peu efficace : palliers peu définis.
 plot(schizo.dec, col = c(1,4,2), xlab = "stations")
 #serie initiale en noir. en bleu il y a des palliers: significatif? tester ici bas
@@ -267,7 +269,7 @@ spectrum(schizo.dec.ts[, 1])
 # Spectre de la première série (la série filtrée)
 ```
 
-
+#Méthode des différences
 ```{r}
 ## Méthode des différences pour enlever l'effet de la tendance generale: TESTER PLUSIEURS DECALAGES.
 (schizo.dif <- tsd(schizo_ts, lag = 1, order = 3, method = "diff"))
@@ -282,12 +284,12 @@ plot(schizo.dif1, col = 1:3)
 #Analyse
 spectrum(schizo_ts)
 # Spectre de schizo_ts
-schizo.dif.ts <- tseries(schizo.dif)
+schizo.dif1.ts <- tseries(schizo.dif1)
 # Extraire série de schizo diff : pour verifier qd on extrait la tendance qu'on la bien extraite. si on extrait les residus c'est pour voir s'il ne reste plus de tendance.
-plot(schizo.dif.ts)
+plot(schizo.dif1.ts)
 # Transforme toute les composante
 #calcul de deux séries: filtrée et résidus
-spectrum(schizo.dif.ts[, 1])
+spectrum(schizo.dif1.ts[, 1])
 # Spectre de la première série (la série filtrée)
 ```
 

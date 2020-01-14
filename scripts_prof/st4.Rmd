@@ -73,6 +73,7 @@ plot(tser.dec, col = c(1, 4), xlab = "time (years)", stack = FALSE, resid = FALS
 #residus pas pris en compte ici. courbe bleue=regression : ici elle se superpose bien à la série initiale.
 
 
+
 Time <- time(co2)
 # Attention : ici on superpose un modèle linéaire (tendance) à un modèle sinusoïdal (cycle), mais on aurait très bien pu éliminer la tendance d'abord ou complexifier le modèle lm: combiner signal sinusoidale avec une droite de tendance (ici bas: "+ Time").
 tser.sin <- lm(co2 ~ I(cos(2*pi*Time)) + I(sin(2*pi*Time)) + Time)
